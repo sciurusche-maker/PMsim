@@ -8,9 +8,11 @@
     * { box-sizing: border-box; }
     body { margin:0; padding:0; background:#0b1120; display:flex; justify-content:center; align-items:center; height:100vh; overflow:hidden; font-family:'Courier New',monospace; user-select:none; }
     canvas { background:linear-gradient(to bottom, #1e293b 0%, #0b1120 100%); border:3px solid #334155; box-shadow:0 0 30px rgba(0,0,0,0.8); cursor:crosshair; display:none; max-width: 95vw; max-height: 90vh; }
+    
     #hud { position:absolute; top:20px; left:50%; transform:translateX(-50%); color:#e2e8f0; font-size:22px; pointer-events:none; background:rgba(15,23,42,0.9); padding:12px 20px; border-radius:8px; border:1px solid #475569; display:none; gap:24px; align-items:center; z-index:10; }
     #progress-bar { width:180px; height:12px; background:#334155; border-radius:6px; overflow:hidden; }
     #progress-fill { height:100%; width:0%; background:#38bdf8; transition:width 0.2s; }
+    
     .screen { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(8,14,25,0.97); display:none; flex-direction:column; justify-content:center; align-items:center; z-index:20; color:#e2e8f0; padding:30px; text-align:center; }
     .screen-title { color:#10b981; font-size:52px; margin:0 0 10px; text-shadow:0 0 20px rgba(16,185,129,0.4); }
     .screen-subtitle { color:#94a3b8; margin:0 0 25px; font-size:26px; }
@@ -45,8 +47,7 @@
     .level-complete-box p { font-size:22px; color:#cbd5e1; line-height:1.5; }
     .lc-win-img { max-width:400px; max-height:220px; border-radius:10px; margin:20px auto; display:block; object-fit:cover; border:3px solid #334155; box-shadow:0 0 15px rgba(16,185,129,0.3); }
     #overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(8,14,25,0.95); display:none; flex-direction:column; justify-content:center; align-items:center; color:#34d399; text-align:center; padding:30px; z-index:30; }
-    #overlay h2 { margin:0 0 20px; color:#10b981; font-size:42px; text-shadow:0 0 15px rgba(16,185,129,0.5); }
-    #overlay .log { font-size:25px; line-height:1.6; margin-bottom:30px; min-height:150px; color:#cbd5e1; }
+    #overlay h2 { margin:0 0 20px; color:#10b981; font-size:42px; text-shadow:0 0 15px rgba(16,185,129,0.5); }    #overlay .log { font-size:25px; line-height:1.6; margin-bottom:30px; min-height:150px; color:#cbd5e1; }
     #overlay button { padding:16px 36px; font-size:24px; cursor:pointer; background:#0f3460; color:#fff; border:1px solid #38bdf8; border-radius:8px; transition:0.2s; margin:5px; }
     #overlay button:hover { background:#1e40af; }
     .hint { position:absolute; bottom:18px; left:50%; transform:translateX(-50%); color:#64748b; font-size:18px; pointer-events:none; z-index:10; display:none; }
@@ -95,8 +96,7 @@
     }
   </style>
 </head>
-<body>
-  <canvas id="game" width="1200" height="675"></canvas>
+<body>  <canvas id="game" width="1200" height="675"></canvas>
   <div id="hud">
     <span style="color:#f59e0b; font-weight:bold;">📦 Уровень: <span id="hud-level">1</span></span>
     <span id="hud-extra" style="color:#38bdf8; font-weight:bold;"></span>
@@ -145,8 +145,7 @@
         <img src="assets/alina_photo.png" alt="Алина" onerror="this.style.background='#f472b6'; this.alt='👩‍'">
         <h3>Алина</h3>
         <p>«Мой CRM для выгула хомяков. Интеграция с Telegram, но только для элитных пород. Дедлайн: когда-нибудь.»</p>
-        <button type="button" class="select-btn" id="btn-select-alina">Выбрать Алину</button>
-      </div>
+        <button type="button" class="select-btn" id="btn-select-alina">Выбрать Алину</button>      </div>
       <div class="char-card" id="card-ekaterina">
         <img src="assets/ekaterina_photo.png" alt="Екатерина" onerror="this.style.background='#60a5fa'; this.alt='👩‍'">
         <h3>Екатерина</h3>
@@ -195,12 +194,12 @@
     <button type="button" onclick="window.backToMenu()" style="border-color:#64748b; color:#94a3b8;">🏠 В главное меню</button>
   </div>
 
-  <div id="debug-menu">
-    <h2>🔧 Debug: Выбор уровня</h2>
+  <div id="debug-menu">    <h2>🔧 Debug: Выбор уровня</h2>
     <p style="color:#94a3b8; margin-bottom:20px;">РП: Алина</p>
     <button type="button" class="debug-btn" onclick="window.debugStart(1)">Уровень 1: Сайт-каталог</button>
     <button type="button" class="debug-btn" onclick="window.debugStart(2)">Уровень 2: Интеграция 1С</button>
     <button type="button" class="debug-btn" onclick="window.debugStart(3)">Уровень 3: Офис-менеджмент</button>
+    <button type="button" class="debug-btn" onclick="window.debugStart(4)">Уровень 4: Пятничный Деплой</button>
     <button type="button" class="debug-btn" style="border-color:#64748b; color:#64748b;" onclick="document.getElementById('debug-menu').style.display='none'">Закрыть</button>
   </div>
 
@@ -227,8 +226,8 @@
       
       const CANVAS_W = 1200, CANVAS_H = 675;
       const GROUND_Y = 585;
-      const LEVEL_W = [4800, 6600, 1200];
-      const FINISH_X = [4275, 6100, 0];
+      const LEVEL_W = [4800, 6600, 1200, 1200];
+      const FINISH_X = [4275, 6100, 0, 0];
 
       let currentLevel = 1;
       let gameState = 'MENU';
@@ -244,10 +243,9 @@
       let audioCtx = null;
       let audioInitialized = false;
 
-      const ASSETS = { 
-        alina: { photo: null, model: null, win: null }, 
+      const ASSETS = {         alina: { photo: null, model: null, win: null }, 
         ekaterina: { photo: null, model: null, win: null }, 
-        ksenia: { photo: null }, anton: { photo: null }, alexey: { photo: null },
+        ksenia: { photo: null }, anton: { photo: null }, alexey: { photo: null }, ilya: { photo: null },
         enemy: null, jumper: null,
         programmer_td: null, alina_td: null, ekaterina_td: null, enemy_td: null
       };
@@ -264,6 +262,7 @@
       let topDownDesks = [], programmers = [], visitors = [], coffeeSpots = [];
       let level3Timer = 120; 
       let visitSpawnTimer = 0, coffeeSpawnTimer = 0;
+      let stealthWalls = [], stealthGuards = [], stealthGoal = {};
 
       const CLIENT_PHRASES = [
         "Логотип крупнее?", "Давайте AI-чат", "Цвет другой!", "Дедлайн вчера",
@@ -284,7 +283,8 @@
       const BRIEFINGS = {
         1: { speaker: "Ксения", role: "Руководитель проектной группы", photo: "assets/ksenia_photo.png", task: "🎯 ТВОЁ ПЕРВОЕ ЗАДАНИЕ", desc: "Разработать <strong>сайт-каталог</strong> для клиента. Да, это тот самый клиент, который вчера прислал ТЗ на 3 страницы, а сегодня звонит каждые 15 минут.<br><br>Что нужно сделать:<br>• Каталог товаров (247 штук, но клиент хочет 500)<br>• Фильтры (цена, цвет, размер, знак зодиака, любимая еда кота)<br>• Адаптив (на телефоне, планшете, холодильнике и умных часах)", warning: "<strong style=\"color:#ef4444;\">⚠️ ВАЖНО:</strong> Клиент уже сказал, что «хочет как у Apple, но бюджет как у стартапа на коленке».", tip: "💡 СОВЕТ ОТ КСЕНИИ: «Помни: <strong>«Нет» — это полное предложение</strong>. Не бойся говорить «нет» клиентам и маркетологам! 💪»" },
         2: { speaker: "Антон", role: "Руководитель веб департамента", photo: "assets/anton_photo.png", task: "🏭 УРОВЕНЬ 2: ИНТЕГРАЦИЯ ПОД КЛЮЧ", desc: "Молодец, каталог прошёл. Теперь по-взрослому. Нам поручили <strong>комплексный проект: Интернет-магазин + 1С + Складская система</strong>.<br><br>Что в ТЗ:<br>• Синхронизация остатков в реальном времени<br>• Автоматическое создание накладных при заказе<br>• Интеграция с WMS<br>• Логика возвратов и «ошибки оператора»", warning: "<strong style=\"color:#ef4444;\">⚠️ ВАЖНО:</strong> Коллеги из соседних отделов тоже будут кидать правки.", tip: "💡 СОВЕТ ОТ АНТОНА: «Стреляй 'NO' и требуй автотесты. Берегись 1С!»" },
-        3: { speaker: "Алексей", role: "Технический директор (CTO)", photo: "assets/alexey_photo.png", task: "🏖️ УРОВЕНЬ 3: ПОДМЕНА CTO", desc: "Привет. Я ухожу в отпуск на две недели. Ты будешь следить за офисом. <strong>Программисты должны работать, а не спать или болтать.</strong><br><br>В офисе 4 отдела:<br>• <strong>Битрикс24</strong> — копаются в интеграциях<br>• <strong>Веб-разработка</strong> — пишут на React и спорят<br>• <strong>Интернет-продвижение</strong> — накручивают метрики<br>• <strong>1С</strong> — молятся серверу<br><br>Стреляй «NO» в спящих и коллег. Подбирай ☕ кофе для буста продуктивности. У тебя <strong>2:00</strong>.", warning: "<strong style=\"color:#ef4444;\">⚠️ ВАЖНО:</strong> Вид сверху. WASD — движение. ЛКМ — стрелять «NO» в направлении последнего движения. Кофе подбирается касанием.", tip: "💡 СОВЕТ ОТ АЛЕКСЕЯ: «Держи продуктивность выше 40%. Кофе даёт временный буст. Удачи!»" }
+        3: { speaker: "Алексей", role: "Технический директор (CTO)", photo: "assets/alexey_photo.png", task: "🏖️ УРОВЕНЬ 3: ПОДМЕНА CTO", desc: "Привет. Я ухожу в отпуск на две недели. Ты будешь следить за офисом. <strong>Программисты должны работать, а не спать или болтать.</strong><br><br>В офисе 4 отдела:<br>• <strong>Битрикс24</strong> — копаются в интеграциях<br>• <strong>Веб-разработка</strong> — пишут на React и спорят<br>• <strong>Интернет-продвижение</strong> — накручивают метрики<br>• <strong>1С</strong> — молятся серверу<br><br>Стреляй «NO» в спящих и коллег. Подбирай ☕ кофе для буста продуктивности. У тебя <strong>2:00</strong>.", warning: "<strong style=\"color:#ef4444;\">⚠️ ВАЖНО:</strong> Вид сверху. WASD — движение. ЛКМ — стрелять «NO» в направлении последнего движения. Кофе подбирается касанием.", tip: "💡 СОВЕТ ОТ АЛЕКСЕЯ: «Держи продуктивность выше 40%. Кофе даёт временный буст. Удачи!»" },
+        4: { speaker: "Илья", role: "Руководитель отдела продаж", photo: "assets/ilya_photo.png", task: "🤫 УРОВЕНЬ 4: ПЯТНИЧНЫЙ ДЕПЛОЙ", desc: "Слушай, у меня тут сделка на миллион. Клиент платит, но только если релиз будет <strong>прямо сейчас</strong>. Да, я знаю что пятница вечер. Да, все руководители уже ушли. <strong>Никто не должен узнать.</strong><br><br>Проникни в серверную на верхнем этаже, запусти деплой и тихо уйди. В офисе остались охранники и бдительные менеджеры. <strong>Не попадайся им на глаза!</strong>", warning: "<strong style=\"color:#ef4444;\">⚠️ ВАЖНО:</strong> Стрельба запрещена! Любой шум или контакт = провал сделки. Двигайся тихо.", tip: "💡 СОВЕТ ОТ ИЛЬИ: «Серверная наверху. Обходи зоны видимости. Если заметят — сделка сорвётся, а нам не заплатят. Удачи, РП!»" }
       };
 
       function loadSettings() {
@@ -292,8 +292,7 @@
         if(saved) {
           const data = JSON.parse(saved);
           musicVolume = data.musicVolume || 0.5;
-          sfxVolume = data.sfxVolume || 0.5;
-          document.getElementById('music-volume').value = musicVolume * 100;
+          sfxVolume = data.sfxVolume || 0.5;          document.getElementById('music-volume').value = musicVolume * 100;
           document.getElementById('sfx-volume').value = sfxVolume * 100;
           document.getElementById('music-vol-val').textContent = Math.round(musicVolume * 100) + '%';
           document.getElementById('sfx-vol-val').textContent = Math.round(sfxVolume * 100) + '%';
@@ -308,7 +307,8 @@
         title: 'assets/music_title.mp3',
         level1: 'assets/music_level1.mp3',
         level2: 'assets/music_level2.mp3',
-        level3: 'assets/music_level3.mp3'
+        level3: 'assets/music_level3.mp3',
+        level4: 'assets/music_level4.mp3'
       };
 
       function initAudio() {
@@ -341,8 +341,7 @@
         if (currentAudio) {
           currentAudio.pause();
           currentAudio.currentTime = 0;
-          currentAudio = null;
-        }
+          currentAudio = null;        }
       }
 
       function playShootSound() {
@@ -391,8 +390,7 @@
       document.getElementById('music-volume').addEventListener('input', function() {
         musicVolume = this.value / 100;
         document.getElementById('music-vol-val').textContent = this.value + '%';
-        if(currentAudio) currentAudio.volume = musicVolume;
-        for(const k in audioPool) audioPool[k].volume = musicVolume;
+        if(currentAudio) currentAudio.volume = musicVolume;        for(const k in audioPool) audioPool[k].volume = musicVolume;
       });
 
       document.getElementById('sfx-volume').addEventListener('input', function() {
@@ -433,6 +431,7 @@
           ['assets/ksenia_photo.png', ASSETS.ksenia, 'photo'], 
           ['assets/anton_photo.png', ASSETS.anton, 'photo'], 
           ['assets/alexey_photo.png', ASSETS.alexey, 'photo'],
+          ['assets/ilya_photo.png', ASSETS.ilya, 'photo'],
           ['assets/programmer_td.png', ASSETS, 'programmer_td'], 
           [`assets/alina_td.png`, ASSETS, 'alina_td'], 
           [`assets/ekaterina_td.png`, ASSETS, 'ekaterina_td'], 
@@ -440,8 +439,7 @@
         ];
         
         let loadedCount = 0;
-        list.forEach(item => {
-          const img = new Image();
+        list.forEach(item => {          const img = new Image();
           img.onload = () => { if(item[1]) item[1][item[2]] = img; checkAllLoaded(); };
           img.onerror = () => { checkAllLoaded(); };
           img.src = item[0];
@@ -457,10 +455,17 @@
       }
 
       function showBriefing(lvl) {
-        currentLevel = lvl; const b = BRIEFINGS[lvl];
+        currentLevel = lvl; 
+        const b = BRIEFINGS[lvl];
+        
+        if (!b) {
+          console.error("Briefing for level " + lvl + " not found!");
+          return;
+        }
+
         briefingContent.innerHTML = `
           <div class="briefing-header">
-            <img src="${b.photo}" alt="${b.speaker}" onerror="this.style.background='#a855f7'; this.alt='👨‍💼'">
+            <img src="${b.photo}" alt="${b.speaker}" onerror="this.style.background='#a855f7'; this.alt='👨‍'">
             <div><h3>${b.speaker}</h3><p class="position">${b.role}</p></div>
           </div>
           <div class="briefing-text"><strong>${b.speaker}:</strong> Уровень ${lvl} начинается прямо сейчас.</div>
@@ -483,8 +488,7 @@
         showScreen(null); 
         canvas.style.display = 'block'; 
         document.getElementById('hud').style.display = 'flex'; 
-        gameHint.style.display = 'block';
-        document.getElementById('hud-level').textContent = currentLevel;
+        gameHint.style.display = 'block';        document.getElementById('hud-level').textContent = currentLevel;
         
         setupLevel(currentLevel); 
         resetState();
@@ -498,7 +502,6 @@
         document.getElementById('pre-game-lvl').textContent = currentLevel;
       }
 
-      // Input handler for PRE_GAME (Пробел + ЛКМ)
       function handlePreGameStart(e) {
         if (gameState !== 'PRE_GAME') return;
         
@@ -508,7 +511,7 @@
           preGameScreen.style.display = 'none';
           gameState = 'PLAYING';
           
-          const trackMap = {1:'level1', 2:'level2', 3:'level3'};
+          const trackMap = {1:'level1', 2:'level2', 3:'level3', 4:'level4'};
           playBGM(trackMap[currentLevel]);
           
           lastTime = 0;
@@ -528,14 +531,13 @@
           stopBGM(); 
         } else { 
           pauseScreen.style.display = 'none'; 
-          const trackMap = {1:'level1', 2:'level2', 3:'level3'};
+          const trackMap = {1:'level1', 2:'level2', 3:'level3', 4:'level4'};
           playBGM(trackMap[currentLevel]);
           lastTime = 0; requestAnimationFrame(loop); 
         }
       };
 
-      window.openSettingsFromPause = function() {
-        pauseScreen.style.display = 'none';
+      window.openSettingsFromPause = function() {        pauseScreen.style.display = 'none';
         settingsScreen.style.display = 'flex';
       };
 
@@ -584,8 +586,7 @@
             { x: 2700, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 2625, max: 2850, dir: -1, phrase: CLIENT_PHRASES[6], dead: false, shootTimer: 45, name: "Сотрудник", onGround: false },
             { x: 3150, y: 0, w: 54, h: 60, vy: 0, hp: 3, maxHp: 3, type: I, min: 3075, max: 3345, dir: 0, phrase: CLIENT_PHRASES[7], dead: false, shootTimer: 120, name: "РПЗ", onGround: false },
             { x: 3700, y: 0, w: 75, h: 67, vy: 0, hp: 8, maxHp: 8, type: P, min: 3600, max: 3870, dir: 1, phrase: CLIENT_PHRASES[8], dead: false, shootTimer: 135, name: "Собственник", onGround: false }
-          ];
-        } else if(lvl === 2) {
+          ];        } else if(lvl === 2) {
           document.getElementById('max-kills').textContent = 15; hudStress.style.display = ''; hudKills.style.display = ''; hudExtra.textContent = '';
           platforms = [
             { x: 0, y: G, w: LEVEL_W[1], h: 90 }, { x: 350, y: 450, w: 200, h: 30 }, { x: 700, y: 320, w: 300, h: 30 },
@@ -624,36 +625,22 @@
         } else if(lvl === 3) {
           document.getElementById('max-kills').textContent = '∞'; hudStress.style.display = 'none'; hudKills.style.display = ''; hudExtra.textContent = '⏱️ 2:00 | 📊 0%';
           level3Timer = 120;
-          
-          // 🏢 НОВАЯ РАСКЛАДКА: Группы отделов (Сдвинуты, чтобы не пересекаться со стенами)
           topDownDesks = [
-            // Битрикс24 (Top Left Cluster) - x < 390 (стена на 400)
-            { x: 120, y: 130, w: 120, h: 60, dept: 0 }, 
-            { x: 260, y: 130, w: 120, h: 60, dept: 0 }, 
-            { x: 120, y: 240, w: 120, h: 60, dept: 0 },
-            
-            // Веб-разработка (Top Right Cluster)
-            { x: 700, y: 130, w: 120, h: 60, dept: 1 }, 
-            { x: 840, y: 130, w: 120, h: 60, dept: 1 }, 
-            { x: 700, y: 240, w: 120, h: 60, dept: 1 },
-            
-            // Продвижение (Bottom Left Cluster)
-            { x: 120, y: 420, w: 120, h: 60, dept: 2 }, 
-            { x: 260, y: 420, w: 120, h: 60, dept: 2 }, 
-            { x: 120, y: 530, w: 120, h: 60, dept: 2 },
-            
-            // 1С (Bottom Right Cluster)
-            { x: 700, y: 420, w: 120, h: 60, dept: 3 }, 
-            { x: 840, y: 420, w: 120, h: 60, dept: 3 }, 
-            { x: 700, y: 530, w: 120, h: 60, dept: 3 }
-          ];
-          
+            { x: 150, y: 120, w: 120, h: 60, dept: 0 }, 
+            { x: 150, y: 240, w: 120, h: 60, dept: 0 }, 
+            { x: 150, y: 360, w: 120, h: 60, dept: 0 },
+            { x: 800, y: 120, w: 120, h: 60, dept: 1 }, 
+            { x: 800, y: 240, w: 120, h: 60, dept: 1 }, 
+            { x: 800, y: 360, w: 120, h: 60, dept: 1 },
+            { x: 150, y: 480, w: 120, h: 60, dept: 2 }, 
+            { x: 150, y: 580, w: 120, h: 60, dept: 2 },
+            { x: 800, y: 480, w: 120, h: 60, dept: 3 }, 
+            { x: 800, y: 580, w: 120, h: 60, dept: 3 }          ];
           l3_decorations = [
             { type: 'cooler', x: 450, y: 80 }, { type: 'cooler', x: 750, y: 580 },
             { type: 'ficus', x: 50, y: 620 }, { type: 'ficus', x: 1100, y: 620 },
             { type: 'ficus', x: 580, y: 40 }, { type: 'ficus', x: 1100, y: 40 }, { type: 'ficus', x: 650, y: 600 }
           ];
-          
           coffeeSpots = []; programmers = [];
           let progId = 0;
           topDownDesks.forEach(desk => {
@@ -665,6 +652,27 @@
             { x: 0, y: 0, w: 10, h: 675, type: 'wall' }, { x: 1190, y: 0, w: 10, h: 675, type: 'wall' },
             { x: 400, y: 0, w: 10, h: 300, type: 'wall', label: 'Перегородка' }, { x: 400, y: 400, w: 10, h: 275, type: 'wall' }
           ];
+        } else if(lvl === 4) {
+          hudStress.style.display = 'none'; hudKills.style.display = 'none'; hudExtra.textContent = '🤫 ТИХО!';
+          document.getElementById('progress-bar').style.display = 'none';
+          
+          stealthWalls = [
+            { x: 0, y: 0, w: 1200, h: 20 }, { x: 0, y: 655, w: 1200, h: 20 }, { x: 0, y: 0, w: 20, h: 675 }, { x: 1180, y: 0, w: 20, h: 675 },
+            { x: 200, y: 150, w: 800, h: 20 }, { x: 200, y: 300, w: 800, h: 20 }, { x: 200, y: 450, w: 800, h: 20 },
+            { x: 400, y: 150, w: 20, h: 150 }, { x: 600, y: 300, w: 20, h: 150 }, { x: 800, y: 450, w: 20, h: 150 },
+            { x: 1000, y: 150, w: 20, h: 150 }
+          ];
+          
+          stealthGuards = [
+            { type: 'patrol', x: 300, y: 80, w: 30, h: 30, path: [{x:300,y:80}, {x:500,y:80}], speed: 1.5, idx: 0, visionRange: 120, visionAngle: 0.8, angle: 0 },
+            { type: 'rotate', x: 700, y: 220, w: 30, h: 30, angle: 0, timer: 0, turnInterval: 120, visionRange: 140, visionAngle: 0.7 },
+            { type: 'patrol', x: 900, y: 380, w: 30, h: 30, path: [{x:900,y:380}, {x:1100,y:380}], speed: 1.2, idx: 0, visionRange: 110, visionAngle: 0.9, angle: 0 },
+            { type: 'rotate', x: 500, y: 520, w: 30, h: 30, angle: Math.PI/2, timer: 0, turnInterval: 90, visionRange: 130, visionAngle: 0.6 },
+            { type: 'patrol', x: 250, y: 580, w: 30, h: 30, path: [{x:250,y:580}, {x:250,y:400}], speed: 1.8, idx: 0, visionRange: 100, visionAngle: 0.8, angle: Math.PI/2 }
+          ];
+          
+          stealthGoal = { x: 550, y: 30, w: 100, h: 80 };
+          player.x = 600; player.y = 600; player.w = 40; player.h = 40;
         }
         for(let e of enemies) { e.y = getGroundYAt(e.x) - e.h; e.vy = 0; e.onGround = false; }
       }
@@ -673,7 +681,11 @@
 
       function resetState() {
         totalKills = 0; stress = 100; cameraX = 0;
-        player.x = currentLevel === 3 ? 600 : 150; player.y = currentLevel === 3 ? 340 : GROUND_Y - 60;
+        if(currentLevel === 4) {
+          player.x = 600; player.y = 600;
+        } else {
+          player.x = currentLevel === 3 ? 600 : 150;           player.y = currentLevel === 3 ? 340 : GROUND_Y - 60;
+        }
         player.vx = 0; player.vy = 0; player.onGround = false; player.facingRight = true;
         player.invuln = 0; player.shootCD = 0; player.damageFlash = 0;
         aimX = 1; aimY = 0; bullets = []; enemyBullets = []; speechBubbles = []; particles = [];
@@ -701,7 +713,13 @@
           let avgProd = programmers.length > 0 ? Math.floor(programmers.reduce((s, p) => s + p.productivity, 0) / programmers.length) : 0;
           hudExtra.textContent = `⏱️ ${mins}:${secs.toString().padStart(2,'0')} | 📊 ${avgProd}%`;
           document.getElementById('progress-fill').style.width = Math.min(100, ((120 - level3Timer) / 120) * 100) + '%';
-        } else { hudExtra.textContent = ''; document.getElementById('progress-fill').style.width = Math.min(100, (player.x / FINISH_X[currentLevel-1]) * 100) + '%'; }
+        } else if(currentLevel === 4) {
+          hudExtra.textContent = '🤫 ТИХО!';
+        } else { 
+          hudExtra.textContent = ''; 
+          document.getElementById('progress-bar').style.display = 'block';
+          document.getElementById('progress-fill').style.width = Math.min(100, (player.x / FINISH_X[currentLevel-1]) * 100) + '%'; 
+        }
       }
 
       function loop(ts) { 
@@ -715,8 +733,7 @@
         }
       }
 
-      function handleWallCollision(entity) {
-        for(let p of platforms) {
+      function handleWallCollision(entity) {        for(let p of platforms) {
           if(p.type !== 'wall' && p.type !== 'cabinet') continue;
           if(entity.x + entity.w > p.x + 4 && entity.x < p.x + p.w - 4 && entity.y + entity.h > p.y && entity.y < p.y + p.h) {
             let ol = (entity.x + entity.w) - p.x, or = (p.x + p.w) - entity.x;
@@ -765,8 +782,7 @@
         visitSpawnTimer++; let sr = Math.max(80, 200 - Math.floor((120 - level3Timer) * 0.4));
         if(visitSpawnTimer >= sr && visitors.length < 5) { spawnVisitor(); visitSpawnTimer = 0; }
         for(let i = visitors.length-1; i>=0; i--) {
-          let v = visitors[i]; if(v.dead) { visitors.splice(i, 1); continue; }
-          let dx = v.target.x - v.x, dy = v.target.y - v.y, d = Math.sqrt(dx*dx+dy*dy);
+          let v = visitors[i]; if(v.dead) { visitors.splice(i, 1); continue; }          let dx = v.target.x - v.x, dy = v.target.y - v.y, d = Math.sqrt(dx*dx+dy*dy);
           if(d > 5) { v.x += (dx/d)*v.speed; v.y += (dy/d)*v.speed; }
           else { if(v.target.state !== 'distracted' && v.target.state !== 'coffee_boosted') { v.target.state = 'distracted'; v.target.stateTimer = 300 + Math.random()*200; } visitors.splice(i, 1); }
         }
@@ -810,6 +826,65 @@
         updateUI();
       }
 
+      function updateStealth() {
+        player.vx = 0; player.vy = 0;
+        if(keys['ArrowUp'] || keys['KeyW']) player.vy = -3;
+        if(keys['ArrowDown'] || keys['KeyS']) player.vy = 3;
+        if(keys['ArrowLeft'] || keys['KeyA']) player.vx = -3;
+        if(keys['ArrowRight'] || keys['KeyD']) player.vx = 3;        
+        let nextX = player.x + player.vx;
+        let nextY = player.y + player.vy;
+        
+        let collides = false;
+        for(let w of stealthWalls) {
+          if(nextX < w.x + w.w && nextX + player.w > w.x && nextY < w.y + w.h && nextY + player.h > w.y) {
+            collides = true; break;
+          }
+        }
+        if(!collides) { player.x = nextX; player.y = nextY; }
+
+        for(let g of stealthGuards) {
+          if(g.type === 'patrol') {
+            let target = g.path[g.idx];
+            let dx = target.x - g.x;
+            let dy = target.y - g.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist < 2) {
+              g.idx = (g.idx + 1) % g.path.length;
+            } else {
+              g.x += (dx/dist) * g.speed;
+              g.y += (dy/dist) * g.speed;
+            }
+            g.angle = Math.atan2(dy, dx);
+          } else if(g.type === 'rotate') {
+            g.timer++;
+            if(g.timer >= g.turnInterval) {
+              g.angle += Math.PI / 2;
+              if(g.angle > Math.PI) g.angle -= 2*Math.PI;
+              g.timer = 0;
+            }
+          }
+          
+          let dx = player.x - g.x;
+          let dy = player.y - g.y;
+          let dist = Math.sqrt(dx*dx + dy*dy);
+          if(dist < g.visionRange) {
+            let angleToPlayer = Math.atan2(dy, dx);
+            let angleDiff = angleToPlayer - g.angle;
+            while(angleDiff > Math.PI) angleDiff -= 2*Math.PI;
+            while(angleDiff < -Math.PI) angleDiff += 2*Math.PI;
+            if(Math.abs(angleDiff) < g.visionAngle / 2) {
+              showEnd('GAME OVER', ['🚨 ВАС ЗАМЕТИЛИ!','Сделка сорвалась. Клиент отказался.','🔄 Попробуйте снова.']);
+              return;
+            }
+          }
+        }
+
+        if(player.x < stealthGoal.x + stealthGoal.w && player.x + player.w > stealthGoal.x && player.y < stealthGoal.y + stealthGoal.h && player.y + player.h > stealthGoal.y) {          showLevelComplete(4);
+        }
+        updateUI();
+      }
+
       function spawnVisitor() {
         let side = Math.floor(Math.random()*4), vx, vy;
         switch(side) { case 0: vx=Math.random()*1200; vy=0; break; case 1: vx=Math.random()*1200; vy=675; break; case 2: vx=0; vy=Math.random()*675; break; default: vx=1200; vy=Math.random()*675; }
@@ -819,6 +894,8 @@
       function update() {
         if(gameState !== 'PLAYING') return;
         if(currentLevel === 3) { updateTopDown(); return; }
+        if(currentLevel === 4) { updateStealth(); return; }
+
         if(keys['ArrowLeft'] || keys['KeyA']) player.vx = -4.5; else if(keys['ArrowRight'] || keys['KeyD']) player.vx = 7.5; else player.vx = player.autoSpeed;
         player.facingRight = player.vx > 0;
         if((keys['Space'] || keys['ArrowUp'] || keys['KeyW']) && player.onGround) { player.vy = player.jump; player.onGround = false; }
@@ -852,8 +929,7 @@
 
       function drawDecoration(d) {
         const {type, x, y} = d;
-        if(type==='desk'||type==='pallet') { ctx.fillStyle='#475569'; ctx.fillRect(x, y-10, 80, 10); ctx.fillStyle='#334155'; ctx.fillRect(x+5, y, 6, 20); ctx.fillRect(x+69, y, 6, 20); }
-        else if(type==='pc') { ctx.fillStyle='#475569'; ctx.fillRect(x-5, y-4, 50, 8); ctx.fillStyle='#334155'; ctx.fillRect(x, y+4, 5, 20); ctx.fillRect(x+30, y+4, 5, 20); ctx.fillStyle='#475569'; ctx.fillRect(x+10, y-12, 4, 10); ctx.fillStyle='#64748b'; ctx.fillRect(x+5, y-30, 30, 22); ctx.fillStyle='#0f172a'; ctx.fillRect(x+8, y-27, 24, 16); ctx.fillStyle='#38bdf8'; ctx.fillRect(x+11, y-21, 18, 3); }
+        if(type==='desk'||type==='pallet') { ctx.fillStyle='#475569'; ctx.fillRect(x, y-10, 80, 10); ctx.fillStyle='#334155'; ctx.fillRect(x+5, y, 6, 20); ctx.fillRect(x+69, y, 6, 20); }        else if(type==='pc') { ctx.fillStyle='#475569'; ctx.fillRect(x-5, y-4, 50, 8); ctx.fillStyle='#334155'; ctx.fillRect(x, y+4, 5, 20); ctx.fillRect(x+30, y+4, 5, 20); ctx.fillStyle='#475569'; ctx.fillRect(x+10, y-12, 4, 10); ctx.fillStyle='#64748b'; ctx.fillRect(x+5, y-30, 30, 22); ctx.fillStyle='#0f172a'; ctx.fillRect(x+8, y-27, 24, 16); ctx.fillStyle='#38bdf8'; ctx.fillRect(x+11, y-21, 18, 3); }
         else if(type==='cabinet') { ctx.fillStyle='#334155'; ctx.fillRect(x, y, 50, 90); ctx.fillStyle='#475569'; ctx.fillRect(x, y+45, 50, 2); ctx.fillRect(x, y, 2, 90); ctx.fillRect(x+15, y+15, 20, 4); ctx.fillRect(x+15, y+55, 20, 4); }
         else if(type==='rollup'||type==='forklift') { ctx.fillStyle='#1e293b'; ctx.fillRect(x, y-120, 4, 120); ctx.fillStyle='#0f3460'; ctx.fillRect(x+4, y-120, 40, 100); ctx.fillStyle='#f472b6'; ctx.fillRect(x+10, y-80, 24, 24); }
         else if(type==='1c_logo') { ctx.fillStyle='#f59e0b'; ctx.fillRect(x, y-60, 70, 60); ctx.fillStyle='#ef4444'; ctx.fillRect(x, y-60, 70, 15); ctx.fillStyle='#fff'; ctx.font='bold 20px monospace'; ctx.fillText('1С', x+15, y-25); ctx.fillStyle='#92400e'; ctx.font='10px monospace'; ctx.fillText('ENTERPRISE', x+2, y-10); }
@@ -864,6 +940,7 @@
       function draw() {
         ctx.clearRect(0,0,CANVAS_W,CANVAS_H); ctx.save(); ctx.translate(-cameraX, 0);
         if(currentLevel===3) { drawTopDown(); ctx.restore(); return; }
+        if(currentLevel===4) { drawStealth(); ctx.restore(); return; }
         let idx=currentLevel-1;
         if(currentLevel===1) { ctx.fillStyle='#1e293b'; for(let i=0;i<10;i++) ctx.fillRect(i*600-80, GROUND_Y+60, 120, 360); }
         else { ctx.fillStyle='#1a1207'; for(let i=0;i<12;i++) ctx.fillRect(i*600-80, GROUND_Y+60, 120, 360); ctx.fillStyle='rgba(245,158,11,0.05)'; for(let i=0;i<6;i++) ctx.fillRect(i*1000,0,500,675); }
@@ -901,21 +978,19 @@
       }
 
       function drawTopDown() {
-        ctx.fillStyle='#1e293b'; ctx.fillRect(0,0,1200,675); ctx.strokeStyle='#334155'; ctx.lineWidth=1;
-        for(let x=0;x<1200;x+=40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,675); ctx.stroke(); }
+        ctx.fillStyle='#1e293b'; ctx.fillRect(0,0,1200,675); ctx.strokeStyle='#334155'; ctx.lineWidth=1;        for(let x=0;x<1200;x+=40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,675); ctx.stroke(); }
         for(let y=0;y<675;y+=40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(1200,y); ctx.stroke(); }
         ctx.fillStyle='#475569'; for(let p of platforms) { if(p.type==='wall') ctx.fillRect(p.x, p.y, p.w, p.h); }
         l3_decorations.forEach(drawDecoration);
         
-        // 🏢 ПОДПИСИ (Центрированы над новыми группами)
-        const dl=[{x:250,y:90,l:'💙 Битрикс24'},{x:830,y:90,l:'💻 Веб-разработка'},{x:250,y:380,l:'📈 Продвижение'},{x:830,y:380,l:'🟠 1С'}];
+        const dl=[{x:210,y:80,l:'💙 Битрикс24'},{x:860,y:80,l:'💻 Веб-разработка'},{x:210,y:640,l:'📈 Продвижение'},{x:860,y:640,l:'🟠 1С'}];
         ctx.textAlign='center';
         for(let d of dl) { 
           ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-          ctx.fillRect(d.x - 90, d.y - 22, 180, 30);
+          ctx.fillRect(d.x - 90, d.y - 18, 180, 24);
           ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
-          ctx.strokeRect(d.x - 90, d.y - 22, 180, 30);
-          ctx.fillStyle='#e2e8f0'; ctx.font='bold 16px monospace';
+          ctx.strokeRect(d.x - 90, d.y - 18, 180, 24);
+          ctx.fillStyle='#e2e8f0'; ctx.font='bold 11px monospace';
           ctx.fillText(d.l, d.x, d.y); 
         }
         ctx.textAlign='left';
@@ -952,29 +1027,89 @@
         if(aimY<0) { ctx.beginPath(); ctx.moveTo(cx, cy-14); ctx.lineTo(cx-6, cy-2); ctx.lineTo(cx+6, cy-2); ctx.closePath(); ctx.fill(); }
         else if(aimY>0) { ctx.beginPath(); ctx.moveTo(cx, cy+14); ctx.lineTo(cx-6, cy+2); ctx.lineTo(cx+6, cy+2); ctx.closePath(); ctx.fill(); }
         else if(aimX>0) ctx.fillRect(cx+player.w/2, cy-4, 12, 8);
-        else { ctx.beginPath(); ctx.moveTo(cx-14, cy); ctx.lineTo(cx-2, cy-6); ctx.lineTo(cx-2, cy+6); ctx.closePath(); ctx.fill(); }
-        ctx.fillStyle='#fff'; ctx.font='bold 12px monospace'; ctx.textAlign='center'; ctx.fillText(selectedChar==='alina'?'АЛ':'ЕК', cx, cy+4); ctx.textAlign='left';
+        else { ctx.beginPath(); ctx.moveTo(cx-14, cy); ctx.lineTo(cx-2, cy-6); ctx.lineTo(cx-2, cy+6); ctx.closePath(); ctx.fill(); }        ctx.fillStyle='#fff'; ctx.font='bold 12px monospace'; ctx.textAlign='center'; ctx.fillText(selectedChar==='alina'?'АЛ':'ЕК', cx, cy+4); ctx.textAlign='left';
         ctx.shadowColor='#38bdf8'; ctx.shadowBlur=8; ctx.fillStyle='#38bdf8'; ctx.font='bold 16px monospace'; for(let b of bullets) ctx.fillText('NO', b.x, b.y); ctx.shadowBlur=0;
         for(let p of particles) { ctx.fillStyle=p.color; ctx.globalAlpha=p.life/35; ctx.fillRect(p.x, p.y, p.size, p.size); }
         ctx.globalAlpha=1;
       }
 
+      function drawStealth() {
+        ctx.fillStyle='#111827'; ctx.fillRect(0,0,CANVAS_W,CANVAS_H);
+        ctx.strokeStyle='#1f2937'; ctx.lineWidth=1;
+        for(let x=0;x<CANVAS_W;x+=40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,CANVAS_H); ctx.stroke(); }
+        for(let y=0;y<CANVAS_H;y+=40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(CANVAS_W,y); ctx.stroke(); }
+        
+        ctx.fillStyle='#334155';
+        for(let w of stealthWalls) ctx.fillRect(w.x, w.y, w.w, w.h);
+        
+        for(let g of stealthGuards) {
+          ctx.fillStyle='rgba(239, 68, 68, 0.15)';
+          ctx.beginPath();
+          ctx.moveTo(g.x + g.w/2, g.y + g.h/2);
+          ctx.arc(g.x + g.w/2, g.y + g.h/2, g.visionRange, g.angle - g.visionAngle/2, g.angle + g.visionAngle/2);
+          ctx.closePath(); ctx.fill();
+        }
+        
+        ctx.fillStyle='#10b981'; ctx.fillRect(stealthGoal.x, stealthGoal.y, stealthGoal.w, stealthGoal.h);
+        ctx.fillStyle='#fff'; ctx.font='10px monospace'; ctx.textAlign='center';
+        ctx.fillText('СЕРВЕРНАЯ', stealthGoal.x + stealthGoal.w/2, stealthGoal.y + stealthGoal.h/2 + 4);
+        
+        for(let g of stealthGuards) {
+          ctx.fillStyle='#ef4444';
+          ctx.fillRect(g.x, g.y, g.w, g.h);
+          ctx.fillStyle='#fff';
+          let cx = g.x + g.w/2, cy = g.y + g.h/2;
+          ctx.fillRect(cx + Math.cos(g.angle)*10 - 3, cy + Math.sin(g.angle)*10 - 3, 6, 6);
+        }
+        
+        let td = selectedChar==='alina'?ASSETS.alina_td:ASSETS.ekaterina_td;
+        if(td && td.complete && td.naturalWidth>0) ctx.drawImage(td, player.x, player.y, player.w, player.h);
+        else { ctx.fillStyle=selectedChar==='alina'?'#f472b6':'#60a5fa'; ctx.fillRect(player.x, player.y, player.w, player.h); }
+        ctx.fillStyle='#fff'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
+        ctx.fillText('РП', player.x+player.w/2, player.y+player.h/2+3); ctx.textAlign='left';
+      }
+
       function showLevelComplete(lvl) {
-        gameState='COMPLETE'; document.getElementById('lc-title').textContent='✅ Уровень '+lvl+' пройден!';
-        let wt='', wh=''; let wa=selectedChar?ASSETS[selectedChar].win:null; if(wa&&wa.complete&&wa.naturalWidth>0) wh='<img class="lc-win-img" src="assets/'+selectedChar+'_win.png" alt="Победа">';
-        if(lvl===1) wt='Сайт-каталог успешно задеплоен.<br><br>🛏️ <b>РП может спокойно поспать.</b>';
+        gameState='COMPLETE'; 
+        document.getElementById('lc-title').textContent='✅ Уровень '+lvl+' пройден!';
+        
+        let wt='', wh=''; 
+        let wa=selectedChar?ASSETS[selectedChar].win:null; 
+        if(wa&&wa.complete&&wa.naturalWidth>0) wh='<img class="lc-win-img" src="assets/'+selectedChar+'_win.png" alt="Победа">';
+                if(lvl===1) wt='Сайт-каталог успешно задеплоен.<br><br>🛏️ <b>РП может спокойно поспать.</b>';
         else if(lvl===2) wt='Интеграция прошла стабильно. 1С и склад синхронизированы.<br><br>🛌 <b>РП может спокойно поспать перед финалом.</b>';
-        document.getElementById('lc-win-img-container').innerHTML=wh; document.getElementById('lc-text').innerHTML=wt;
-        if(lvl<3) { nextLevelBtn.style.display='block'; nextLevelBtn.textContent='📋 Брифинг по следующему уровню'; nextLevelBtn.onclick=()=>showBriefing(lvl+1); } else nextLevelBtn.style.display='none';
-        screenLevelComplete.style.display='flex'; canvas.style.display='none'; document.getElementById('hud').style.display='none'; gameHint.style.display='none';
+        else if(lvl===4) wt='Деплой прошёл успешно! Сделка закрыта, деньги получены.<br><br>🤫 <b>Никто так и не узнал.</b>';
+        
+        document.getElementById('lc-win-img-container').innerHTML=wh; 
+        document.getElementById('lc-text').innerHTML=wt;
+        
+        // ИСПРАВЛЕНИЕ: Показываем кнопку до уровня 4 включительно (чтобы после 3 открыть 4)
+        if(lvl <= 3) { 
+            nextLevelBtn.style.display='block'; 
+            nextLevelBtn.textContent='📋 Брифинг по следующему уровню'; 
+            nextLevelBtn.onclick=()=>showBriefing(lvl+1); 
+        } else {
+            nextLevelBtn.style.display='none';
+        }
+        
+        screenLevelComplete.style.display='flex'; 
+        canvas.style.display='none'; 
+        document.getElementById('hud').style.display='none'; 
+        gameHint.style.display='none';
       }
 
       function showEnd(title, lines) {
-        gameState=title==='ПОБЕДА'?'WIN':'LOSE'; document.getElementById('overlay-title').textContent=title;
-        if(title==='ПОБЕДА' && currentLevel===3) { let wa=selectedChar?ASSETS[selectedChar].win:null; document.getElementById('overlay-log').innerHTML=lines.map(l=>'<div style="margin-bottom:10px">'+l+'</div>').join('')+(wa&&wa.complete&&wa.naturalWidth>0?'<img class="lc-win-img" src="assets/'+selectedChar+'_win.png" alt="Победа" style="margin-top:15px;">':''); }
+        gameState=title==='ПОБЕДА'?'WIN':'LOSE'; 
+        document.getElementById('overlay-title').textContent=title;
+        if(title==='ПОБЕДА' && currentLevel===3) { 
+            let wa=selectedChar?ASSETS[selectedChar].win:null; 
+            document.getElementById('overlay-log').innerHTML=lines.map(l=>'<div style="margin-bottom:10px">'+l+'</div>').join('')+(wa&&wa.complete&&wa.naturalWidth>0?'<img class="lc-win-img" src="assets/'+selectedChar+'_win.png" alt="Победа" style="margin-top:15px;">':''); 
+        }
         else document.getElementById('overlay-log').innerHTML=lines.map(l=>'<div style="margin-bottom:10px">'+l+'</div>').join('');
+        
         let bh=title==='ПОБЕДА'?'<button onclick="window.backToMenu()">🏠 В меню</button>':'<button onclick="window.retryLevel()">🔄 Повторить уровень '+currentLevel+'</button> <button onclick="window.backToMenu()">🏠 В меню</button>';
-        document.getElementById('overlay-btns').innerHTML=bh; overlay.style.display='flex';
+        document.getElementById('overlay-btns').innerHTML=bh; 
+        overlay.style.display='flex';
       }
 
       window.retryLevel = function() { isPaused=false; pauseScreen.style.display='none'; overlay.style.display='none'; document.getElementById('hud').style.display='flex'; gameHint.style.display='block'; canvas.style.display='block'; setupLevel(currentLevel); resetState(); gameState='PLAYING'; lastTime=0; requestAnimationFrame(loop); };
