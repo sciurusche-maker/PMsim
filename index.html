@@ -6,14 +6,15 @@
   <title>Симулятор руководителя проекта</title>
   <style>
     * { box-sizing: border-box; }
-    body { margin:0; padding:0; background:#0b1120; display:flex; justify-content:center; align-items:center; height:100vh; overflow:hidden; font-family:'Courier New',monospace; user-select:none; }
+    body { margin:0; padding:0; background:#0b1120; display:flex; justify-content:center; align-items:center; height:100dvh; overflow:hidden; font-family:'Courier New',monospace; user-select:none; }
     canvas { background:linear-gradient(to bottom, #1e293b 0%, #0b1120 100%); border:3px solid #334155; box-shadow:0 0 30px rgba(0,0,0,0.8); cursor:crosshair; display:none; max-width: 95vw; max-height: 90vh; }
+    #game-canvas-wrap { display:contents; }
     
     #hud { position:absolute; top:20px; left:50%; transform:translateX(-50%); color:#e2e8f0; font-size:22px; pointer-events:none; background:rgba(15,23,42,0.9); padding:12px 20px; border-radius:8px; border:1px solid #475569; display:none; gap:24px; align-items:center; z-index:10; }
     #progress-bar { width:180px; height:12px; background:#334155; border-radius:6px; overflow:hidden; }
     #progress-fill { height:100%; width:0%; background:#38bdf8; transition:width 0.2s; }
     
-    .screen { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(8,14,25,0.97); display:none; flex-direction:column; justify-content:center; align-items:center; z-index:20; color:#e2e8f0; padding:30px; text-align:center; }
+    .screen { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(8,14,25,0.97); display:none; flex-direction:column; justify-content:center; align-items:center; z-index:20; color:#e2e8f0; padding:30px; text-align:center; box-sizing:border-box; }
     .screen-title { color:#10b981; font-size:52px; margin:0 0 10px; text-shadow:0 0 20px rgba(16,185,129,0.4); }
     .screen-subtitle { color:#94a3b8; margin:0 0 25px; font-size:26px; }
     .char-grid { display:flex; gap:40px; flex-wrap:wrap; justify-content:center; margin-bottom:30px; }
@@ -74,6 +75,19 @@
     .setting-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; background:#38bdf8; border-radius:50%; cursor:pointer; }
     .volume-value { color:#fbbf24; font-size:14px; margin-left:10px; }
 
+    #loading-screen {
+      position:fixed; top:0; left:0; width:100%; height:100%;
+      background:#0b1120; display:flex; flex-direction:column;
+      justify-content:center; align-items:center; z-index:100;
+      font-family:'Courier New',monospace; color:#e2e8f0;
+    }
+    #loading-screen h2 { color:#10b981; font-size:36px; margin:0 0 10px; text-shadow:0 0 20px rgba(16,185,129,0.4); }
+    #loading-screen p { color:#94a3b8; font-size:16px; margin:0 0 30px; }
+    #loading-bar-wrapper { position:relative; width:600px; max-width:90vw; height:60px; }
+    #loading-bar-bg { position:absolute; bottom:0; left:0; width:100%; height:16px; background:#1e293b; border-radius:8px; border:2px solid #334155; overflow:hidden; }
+    #loading-bar-fill { height:100%; width:0%; background:linear-gradient(90deg,#10b981,#38bdf8); border-radius:8px; transition:width 0.12s; }
+    #loading-runner { position:absolute; bottom:16px; left:0; }
+    #loading-pct { margin-top:14px; color:#64748b; font-size:14px; }
     .blink-text {
       animation: blink 1.8s infinite alternate;
       font-size: 26px;
@@ -95,9 +109,170 @@
       from { opacity: 0.2; transform: scale(0.98); } 
       to { opacity: 1; transform: scale(1); } 
     }
-  </style>
+  
+      /* ===== FINALE SCREEN ===== */
+      #finale-screen {
+        display: none; position: fixed; inset: 0; z-index: 200;
+        background: #020810; color: #e2e8f0;
+        font-family: 'Courier New', monospace;
+        flex-direction: column; align-items: center; justify-content: center;
+        overflow: hidden;
+      }
+      #finale-screen.active { display: flex; }
+      .finale-slide { display:none; flex-direction:column; align-items:center; justify-content:center;
+        width:100%; max-width:800px; padding:30px; text-align:center; animation: fadeInUp 0.6s ease; }
+      .finale-slide.active { display:flex; }
+      @keyframes fadeInUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+      .finale-title { font-size:32px; font-weight:bold; margin-bottom:20px; line-height:1.3; }
+      .finale-body  { font-size:16px; line-height:1.8; color:#94a3b8; max-width:680px; }
+      .finale-body b { color:#e2e8f0; }
+      .finale-email  { background:#0f1f35; border:1px solid #1e3a5a; border-radius:8px;
+        padding:20px; text-align:left; font-size:14px; margin:16px 0; width:100%; max-width:580px; }
+      .finale-email .subj { color:#38bdf8; font-weight:bold; margin-bottom:8px; }
+      .finale-email .from  { color:#64748b; font-size:12px; margin-bottom:12px; }
+      .finale-email .body  { color:#94a3b8; line-height:1.9; }
+      .finale-list { text-align:left; background:#0b1729; border:1px solid #1e3a5a; border-radius:8px;
+        padding:16px 24px; font-size:13px; line-height:2; width:100%; max-width:600px; max-height:260px;
+        overflow-y:auto; }
+      .finale-list li { color:#94a3b8; } .finale-list li b { color:#fbbf24; }
+      .finale-stat { display:flex; justify-content:space-between; background:#0f1729;
+        border-radius:6px; padding:10px 20px; margin:6px 0; font-size:14px; width:100%; max-width:540px; }
+      .finale-stat .k { color:#64748b; } .finale-stat .v { color:#10b981; font-weight:bold; }
+      .finale-stat .v.bad { color:#ef4444; }
+      .finale-credits { font-size:12px; color:#334155; line-height:2.2; margin-top:16px; }
+      .finale-credits b { color:#475569; }
+      .finale-btn { margin-top:28px; padding:12px 36px; background:#1e3a5a; border:2px solid #38bdf8;
+        color:#38bdf8; font-family:monospace; font-size:16px; font-weight:bold; cursor:pointer;
+        border-radius:6px; transition:all .2s; }
+      .finale-btn:hover { background:#38bdf8; color:#020810; }
+      .confetti-wrap { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+      .confetti-piece { position:absolute; width:10px; height:10px; border-radius:2px;
+        animation: confettiFall linear forwards; }
+      @keyframes confettiFall {
+        0%   { transform: translateY(-20px) rotate(0deg); opacity:1; }
+        100% { transform: translateY(110vh) rotate(720deg); opacity:0; }
+      }
+
+
+/* ===== MOBILE CONTROLS ===== */
+
+/* Scrollable screens on touch devices */
+@media (pointer: coarse) {
+  body { touch-action: pan-y; }
+  .screen {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    justify-content: flex-start;
+    padding-top: 32px;
+    padding-bottom: 32px;
+  }
+  /* Landscape: canvas fills screen with no margin */
+  canvas {
+    max-width: 100vw !important;
+    max-height: 100dvh !important;
+    border-width: 0 !important;
+  }
+}
+
+/* Landscape orientation on phone */
+@media (pointer: coarse) and (orientation: landscape) {
+  body { align-items: center; }
+  canvas {
+    width:  min(100vw, calc(100dvh * 16 / 9)) !important;
+    height: min(100dvh, calc(100vw * 9 / 16)) !important;
+  }
+}
+
+#mobile-controls {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 60;
+  display: none;
+}
+#mobile-controls.visible { display: block; }
+
+/* Joystick */
+#m-stick-zone {
+  position: absolute;
+  /* JS positions this relative to canvas bounds */
+  left: 12px; bottom: 12px;
+  width: 130px; height: 130px;
+  pointer-events: all;
+  touch-action: none;
+}
+#m-stick-ring {
+  width: 130px; height: 130px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.25);
+  border: 2.5px solid rgba(255,255,255,0.20);
+  position: relative;
+  backdrop-filter: blur(2px);
+}
+#m-stick-thumb {
+  position: absolute;
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.20);
+  border: 2px solid rgba(255,255,255,0.40);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+#m-stick-arrows {
+  position: absolute;
+  inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: rgba(255,255,255,0.25); pointer-events: none;
+  flex-direction: column; gap: 1px; line-height: 1;
+}
+
+/* Buttons zone */
+#m-btn-zone {
+  position: absolute;
+  /* JS positions this relative to canvas bounds */
+  right: 12px; bottom: 12px;
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+  pointer-events: none;
+}
+.m-btn-row { display: flex; gap: 8px; pointer-events: none; }
+.m-btn {
+  width: 62px; height: 62px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.25);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.88);
+  font-size: 10px; font-weight: 700; font-family: monospace;
+  user-select: none;
+  pointer-events: all;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  transition: transform 0.07s, opacity 0.07s;
+  text-align: center; line-height: 1.25;
+  backdrop-filter: blur(2px);
+}
+.m-btn:active, .m-btn.pressed { transform: scale(0.87); opacity: 0.7; }
+#m-btn-shoot  { background: rgba(220,38,38,0.45); font-size: 22px; }
+#m-btn-jump   { background: rgba(22,163,74,0.42); }
+#m-btn-shield { background: rgba(37,99,235,0.45); }
+
+</style>
 </head>
 <body>
+  <div id="loading-screen">
+    <h2>⚙️ ЗАГРУЗКА ПРОЕКТА...</h2>
+    <p>Пока менеджер готовится, система подгружает ресурсы</p>
+    <div id="loading-bar-wrapper">
+      <div id="loading-runner">
+        <canvas id="loading-runner-canvas" width="48" height="48"></canvas>
+      </div>
+      <div id="loading-bar-bg">
+        <div id="loading-bar-fill"></div>
+      </div>
+    </div>
+    <div id="loading-pct">0%</div>
+  </div>
   <canvas id="game" width="1200" height="675"></canvas>
   <div id="hud">
     <span style="color:#f59e0b; font-weight:bold;">📦 Уровень: <span id="hud-level">1</span></span>
@@ -185,10 +360,110 @@
 
   <!-- 🟠 ПРОМЕЖУТОЧНЫЙ ЭКРАН (3 -> 4) -->
   <div id="intermediate-screen" class="screen" style="background:rgba(8,14,25,0.98); z-index:25;">
-    <h2 class="screen-title" style="color:#10b981; font-size:42px;">✅ Уровень 3 пройден!</h2>
-    <p style="color:#94a3b8; font-size:20px; margin:20px 0;">Департамент одобряет. Переходим к финальной фазе.</p>
+    <h2 class="screen-title" style="color:#10b981; font-size:38px;">✅ Уровень 3 пройден!</h2>
+    <div id="lvl3-win-img-container"></div>
+    <p id="lvl3-win-text" style="color:#94a3b8; font-size:17px; margin:18px 0; max-width:560px; text-align:center; line-height:1.7;"></p>
     <button onclick="window.goToNextLevel()" class="btn-primary" style="margin-top:10px;">📋 Брифинг по 4 уровню</button>
     <button onclick="window.backToMenu()" class="btn-primary" style="background:#0f3460; margin-top:15px;">🏠 В главное меню</button>
+  </div>
+
+
+  <!-- ===== ФИНАЛЬНЫЙ ЭКРАН ===== -->
+  <div id="finale-screen">
+    <div class="confetti-wrap" id="confetti-wrap"></div>
+
+    <!-- SLIDE 1: Победа -->
+    <div class="finale-slide active" id="finale-s1">
+      <div class="finale-title" style="color:#10b981;font-size:38px;">🏆 КЛИЕНТ ПОВЕРЖЁН!</div>
+      <div class="finale-body">
+        Акт выполненных работ <b>подписан</b>.<br>
+        Деньги на счёте.<br>
+        Проект <b>официально закрыт</b>.<br><br>
+        Ты выстоял против разъярённого клиента, бесконечных правок,<br>
+        пятничных деплоев и корпоративного хаоса.<br><br>
+        <b style="color:#fbbf24;font-size:20px;">Ты — настоящий РП.</b><br>
+        <span style="color:#64748b;font-size:13px;">(по крайней мере до понедельника)</span>
+      </div>
+      <button class="finale-btn" onclick="finaleNext(2)">Что дальше? →</button>
+    </div>
+
+    <!-- SLIDE 2: Письмо в понедельник -->
+    <div class="finale-slide" id="finale-s2">
+      <div class="finale-title" style="color:#38bdf8;">📧 Понедельник. 09:03.</div>
+      <div class="finale-email">
+        <div class="from">От: klient@corporation.ru · Кому: rp@pervybit.ru</div>
+        <div class="subj">Тема: RE: RE: RE: Акт — небольшие правки 🙂</div>
+        <div class="body">
+          Добрый день!<br><br>
+          Спасибо за проделанную работу, всё отлично!<br>
+          Мы тут посовещались с командой и директором,<br>
+          и хотели бы внести <b>небольшие правки</b> — совсем чуть-чуть.<br><br>
+          Список во вложении (47 пунктов).<br>
+          Можем созвониться сегодня в 18:00?<br><br>
+          С уважением,<br>
+          <b>Виктор Иванович</b><br>
+          <span style="color:#475569;font-size:11px;">Директор по стратегическому развитию цифровой трансформации</span>
+        </div>
+      </div>
+      <button class="finale-btn" onclick="finaleNext(3)">Открыть вложение →</button>
+    </div>
+
+    <!-- SLIDE 3: 47 правок -->
+    <div class="finale-slide" id="finale-s3">
+      <div class="finale-title" style="color:#f59e0b;">📋 «Небольшие правки» (47 пунктов)</div>
+      <ul class="finale-list">
+        <li>1. Поменять синий <b>#0066ff</b> на <b>#0068ff</b> («чуть теплее»)</li>
+        <li>2. Логотип сделать «немного крупнее» (в 3 раза)</li>
+        <li>3. Добавить раздел «О компании» — 10 страниц текста</li>
+        <li>4. Интеграция с 1С, SAP, Oracle и «желательно блокчейном»</li>
+        <li>5. Сделать «как у Apple, только лучше»</li>
+        <li>6. Анимация при скролле: «чтобы всё летало»</li>
+        <li>7. Убрать всё что добавили на прошлой неделе</li>
+        <li>8. Добавить обратно то, что убрали позавчера</li>
+        <li>9. Мобильная версия — «ну как у всех нормальных»</li>
+        <li>10. Кнопка «Заказать» — «сделайте её зелёной... нет, красной... нет, зелёной»</li>
+        <li>11. Текст написать «поживее, по-человечески»</li>
+        <li>12. Добавить «вот такую штуку как у конкурентов» [скриншот недоступен]</li>
+        <li>13–47. <b style="color:#ef4444">[файл обрезан лимитом почты]</b></li>
+      </ul>
+      <button class="finale-btn" onclick="finaleNext(4)">Принять к работе → 😭</button>
+    </div>
+
+    <!-- SLIDE 4: Повышение -->
+    <div class="finale-slide" id="finale-s4">
+      <div class="finale-title" style="color:#a855f7;">🎖 ПОЗДРАВЛЯЕМ С ПОВЫШЕНИЕМ!</div>
+      <div class="finale-body" style="margin-bottom:14px;">
+        За выдающиеся результаты вас назначают<br>
+        <b style="font-size:20px;color:#e2e8f0;">СТАРШИМ РУКОВОДИТЕЛЕМ ПРОЕКТОВ</b>
+      </div>
+      <div class="finale-stat"><span class="k">Новая зарплата</span><span class="v">+50 000 ₽ / мес</span></div>
+      <div class="finale-stat"><span class="k">Количество проектов</span><span class="v bad">6 одновременно</span></div>
+      <div class="finale-stat"><span class="k">Рабочих часов в день</span><span class="v bad">12–14</span></div>
+      <div class="finale-stat"><span class="k">Главный клиент</span><span class="v bad">Виктор Иванович снова</span></div>
+      <div class="finale-stat"><span class="k">Бонус за прошлый проект</span><span class="v">«Спасибо» в Teams</span></div>
+      <div class="finale-stat"><span class="k">Отпуск</span><span class="v bad">«После сдачи, ок?»</span></div>
+      <button class="finale-btn" onclick="finaleNext(5)">Хорошо, буду стараться 🙃 →</button>
+    </div>
+
+    <!-- SLIDE 5: Настоящий финал + credits -->
+    <div class="finale-slide" id="finale-s5">
+      <div class="finale-title" style="color:#10b981;font-size:28px;">🎮 КОНЕЦ ИГРЫ</div>
+
+      <div class="finale-credits">
+        <b>— СОЗДАНО КОМАНДОЙ ПЕРВЫЙ БИТ —</b><br>
+        Геймдизайн: «Сделай как у Hollow Knight, бюджет — ноль»<br>
+        Тестирование: «Работает на моём компьютере»<br>
+        Документация: <span style="text-decoration:line-through">существует</span> [файл не найден]<br>
+        Баги: задокументированы как «features»<br>
+        Дедлайн: был вчера<br>
+        Кофе израсходовано: ☕☕☕☕☕ (критически)<br>
+        Ни один РП в ходе создания игры не пострадал<br>
+        <span style="color:#1e3a5a;">...или пострадал. Мы не уверены.</span>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:24px;">
+        <button class="finale-btn" onclick="window.backToMenu()">🏠 В главное меню</button>
+      </div>
+    </div>
   </div>
 
   <div id="overlay">
@@ -212,6 +487,7 @@
     <button type="button" class="debug-btn" onclick="window.debugStart(2)">Уровень 2: Интеграция 1С</button>
     <button type="button" class="debug-btn" onclick="window.debugStart(3)">Уровень 3: Офис-менеджмент</button>
     <button type="button" class="debug-btn" onclick="window.debugStart(4)">Уровень 4: Пятничный Деплой</button>
+    <button type="button" class="debug-btn" onclick="window.debugStart(5)">Уровень 5: Разъярённый Клиент</button>
     <button type="button" class="debug-btn" style="border-color:#64748b; color:#64748b;" onclick="document.getElementById('debug-menu').style.display='none'">Закрыть</button>
   </div>
 
@@ -239,10 +515,11 @@
       
       const CANVAS_W = 1200, CANVAS_H = 675;
       const GROUND_Y = 585;
-      const LEVEL_W = [4800, 6600, 1200, 1200];
-      const FINISH_X = [4275, 6100, 0, 0];
+      const LEVEL_W = [5400, 7200, 1200, 1200, 2400];
+      const FINISH_X = [4875, 6700, 0, 0, 0];
 
       let currentLevel = 1;
+      window.__glvl = () => currentLevel; // expose for mobile controls
       let gameState = 'MENU';
       let selectedChar = null;
       let cameraX = 0, totalKills = 0, stress = 100, lastTime = 0;
@@ -257,16 +534,16 @@
       let audioInitialized = false;
 
       const ASSETS = { 
-        alina: { photo: null, model: null, win: null }, 
-        ekaterina: { photo: null, model: null, win: null }, 
+        alina: { photo: null, model: null, step1: null, step2: null, idle: null, jump: null, fall: null, win: null }, 
+        ekaterina: { photo: null, model: null, step1: null, step2: null, idle: null, jump: null, fall: null, win: null }, 
         ksenia: { photo: null }, anton: { photo: null }, alexey: { photo: null }, ilya: { photo: null },
-        enemy: null, jumper: null,
-        programmer_td: null, alina_td: null, ekaterina_td: null, enemy_td: null
+        enemy: null, jumper: null, boss_model: null,
+        programmer_td: null, alina_td: null, ekaterina_td: null, enemy_td: null, manager_td: null, security_td: null
       };
 
       const player = {
         x: 150, y: GROUND_Y - 60, w: 48, h: 60,
-        vx: 0, vy: 0, autoSpeed: 2.7, jump: -17,
+        vx: 0, vy: 0, autoSpeed: 2.7, jump: -13,
         facingRight: true, onGround: false, shootCD: 0, invuln: 0, damageFlash: 0
       };
 
@@ -276,7 +553,11 @@
       let topDownDesks = [], programmers = [], visitors = [], coffeeSpots = [];
       let level3Timer = 120; 
       let visitSpawnTimer = 0, coffeeSpawnTimer = 0;
-      let stealthWalls = [], stealthGuards = [], stealthGoal = {};
+      let stealthWalls = [], stealthGuards = [], stealthGoal = {}, stealthDecorations = [];
+      let cameraY = 0;
+      let boss = null, bossProjectiles = [], level5Coffees = [], coffeeTimer5 = 0, level2Coffees = [], coffeeTimer2 = 0;
+      let shieldActive = false, shieldTimer = 0, shieldCD = 0;
+      let heatLevel = 0, heatOverheat = false;
 
       const CLIENT_PHRASES = [
         "Логотип крупнее?", "Давайте AI-чат", "Цвет другой!", "Дедлайн вчера",
@@ -298,6 +579,30 @@
         1: { speaker: "Ксения", role: "Руководитель проектной группы", photo: "assets/ksenia_photo.png", task: "🎯 ТВОЁ ПЕРВОЕ ЗАДАНИЕ", desc: "Разработать <strong>сайт-каталог</strong> для клиента. Да, это тот самый клиент, который вчера прислал ТЗ на 3 страницы, а сегодня звонит каждые 15 минут.<br><br>Что нужно сделать:<br>• Каталог товаров (247 штук, но клиент хочет 500)<br>• Фильтры (цена, цвет, размер, знак зодиака, любимая еда кота)<br>• Адаптив (на телефоне, планшете, холодильнике и умных часах)", warning: "<strong style=\"color:#ef4444;\">⚠️ ВАЖНО:</strong> Клиент уже сказал, что «хочет как у Apple, но бюджет как у стартапа на коленке».", tip: "💡 СОВЕТ ОТ КСЕНИИ: «Помни: <strong>«Нет» — это полное предложение</strong>. Не бойся говорить «нет» клиентам и маркетологам! 💪»" },
         2: { speaker: "Антон", role: "Руководитель веб департамента", photo: "assets/anton_photo.png", task: "🏭 УРОВЕНЬ 2: ИНТЕГРАЦИЯ ПОД КЛЮЧ", desc: "Молодец, каталог прошёл. Теперь по-взрослому. Нам поручили <strong>комплексный проект: Интернет-магазин + 1С + Складская система</strong>.<br><br>Что в ТЗ:<br>• Синхронизация остатков в реальном времени<br>• Автоматическое создание накладных при заказе<br>• Интеграция с WMS<br>• Логика возвратов и «ошибки оператора»", warning: "<strong style=\"color:#ef4444;\">⚠️ ВАЖНО:</strong> Коллеги из соседних отделов тоже будут кидать правки.", tip: "💡 СОВЕТ ОТ АНТОНА: «Стреляй 'NO' и требуй автотесты. Берегись 1С!»" },
         3: { speaker: "Алексей", role: "Технический директор (CTO)", photo: "assets/alexey_photo.png", task: "🏖️ УРОВЕНЬ 3: ПОДМЕНА CTO", desc: "Привет. Я ухожу в отпуск на две недели. Ты будешь следить за офисом. <strong>Программисты должны работать, а не спать или болтать.</strong><br><br>В офисе 4 отдела:<br>• <strong>Битрикс24</strong> — копаются в интеграциях<br>• <strong>Веб-разработка</strong> — пишут на React и спорят<br>• <strong>Интернет-продвижение</strong> — накручивают метрики<br>• <strong>1С</strong> — молятся серверу<br><br>Стреляй «NO» в спящих и коллег. Подбирай ☕ кофе для буста продуктивности. У тебя <strong>2:00</strong>.", warning: "<strong style=\"color:#ef4444;\">⚠️ ВАЖНО:</strong> Вид сверху. WASD — движение. ЛКМ — стрелять «NO» в направлении последнего движения. Кофе подбирается касанием.", tip: "💡 СОВЕТ ОТ АЛЕКСЕЯ: «Держи продуктивность выше 40%. Кофе даёт временный буст. Удачи!»" },
+        5: {
+          isMultiSpeaker: true,
+          speakers: [
+            { name: "Антон", photo: "assets/anton_photo.png", role: "Руководитель веб департамента" },
+            { name: "Ксения", photo: "assets/ksenia_photo.png", role: "Руководитель проектной группы" },
+            { name: "Алексей", photo: "assets/alexey_photo.png", role: "CTO" },
+            { name: "Илья", photo: "assets/ilya_photo.png", role: "Руководитель отдела продаж" }
+          ],
+          dialogue: [
+            { who: 0, text: "🚨 ВНИМАНИЕ! Кто-то задеплоил в пятницу вечером. Продакшен УПАЛ!" },
+            { who: 1, text: "Кто это сделал?! Серьёзно, кто в здравом уме деплоит в пятницу?!" },
+            { who: 2, text: "Я был в отпуске — это точно не я. Я даже ноутбук не брал с собой!" },
+            { who: 3, text: "Ну... была одна срочная сделка. Клиент требовал релиз прямо сейчас..." },
+            { who: 0, text: "ИЛЬЯ! Мы же договорились — никаких пятничных деплоев!!!" },
+            { who: 3, text: "Сделка была на миллион рублей... я думал, всё обойдётся..." },
+            { who: 1, text: "Ничего не обошлось. Клиент ЗВОНИТ. Он в абсолютной ярости!" },
+            { who: 2, text: "РП, держи антикризисный протокол. SHIFT — временный щит. Кофе восстанавливает здоровье." },
+            { who: 0, text: "Выдержи натиск! Стреляй NO, используй щит. Мы в тебя верим. Удачи, РП!" }
+          ],
+          task: "😤 УРОВЕНЬ 5: РАЗЪЯРЁННЫЙ КЛИЕНТ",
+          desc: "Клиент в состоянии максимального раздражения после пятничного деплоя.<br><br>Атаки клиента:<br>• <strong>Наземная волна</strong> — прыгай на платформы!<br>• <strong>Воздушные бомбы</strong> — оставайся на земле!<br>• <strong>Тройной залп</strong> — уклоняйся!<br>• <strong>Рывок</strong> — отбеги в сторону!",
+          warning: "<strong style='color:#ef4444;'>⚠️ ВАЖНО:</strong> SHIFT = щит (2 сек, откат 5 сек). Кофе = восстановление здоровья. Прыжок = ПРОБЕЛ, W или ↑.",
+          tip: "💡 Наблюдай за фазами атаки! С уменьшением HP клиент становится быстрее и злее."
+        },
         4: { speaker: "Илья", role: "Руководитель отдела продаж", photo: "assets/ilya_photo.png", task: "🤫 УРОВЕНЬ 4: ПЯТНИЧНЫЙ ДЕПЛОЙ", desc: "Слушай, у меня тут сделка на миллион. Клиент платит, но только если релиз будет <strong>прямо сейчас</strong>. Да, я знаю что пятница вечер. Да, все руководители уже ушли. <strong>Никто не должен узнать.</strong><br><br>Проникни в серверную на верхнем этаже, запусти деплой и тихо уйди. В офисе остались охранники и бдительные менеджеры. <strong>Не попадайся им на глаза!</strong>", warning: "<strong style=\"color:#ef4444;\">⚠️ ВАЖНО:</strong> Стрельба запрещена! Любой шум или контакт = провал сделки. Двигайся тихо.", tip: "💡 СОВЕТ ОТ ИЛЬИ: «Серверная наверху. Обходи зоны видимости. Если заметят — сделка сорвётся, а нам не заплатят. Удачи, РП!»" }
       };
 
@@ -323,7 +628,8 @@
         level1: 'assets/music_level1.mp3',
         level2: 'assets/music_level2.mp3',
         level3: 'assets/music_level3.mp3',
-        level4: 'assets/music_level4.mp3'
+        level4: 'assets/music_level4.mp3',
+        level5: 'assets/music_level5.mp3'
       };
 
       function initAudio() {
@@ -379,6 +685,12 @@
 
       function handleStartInteraction() {
         if (isGameStarted) return;
+        if (!window.__assetsReady) {
+          // Assets not ready yet — pulse the loading hint
+          const sm = document.getElementById('start-message');
+          if(sm) { sm.textContent = '⏳ Загрузка...'; setTimeout(() => { if(sm) sm.textContent = 'Нажми любую кнопку для начала'; }, 1200); }
+          return;
+        }
         isGameStarted = true;
         initAudio();
         playBGM('title');
@@ -443,6 +755,20 @@
           [`assets/${char}_photo.png`, ASSETS[char], 'photo'], 
           [`assets/${char}_model.png`, ASSETS[char], 'model'], 
           [`assets/${char}_win.png`, ASSETS[char], 'win'],
+          ...(char === 'ekaterina' ? [
+            ['assets/ekaterina_model_step1.png', ASSETS.ekaterina, 'step1'],
+            ['assets/ekaterina_model_step2.png', ASSETS.ekaterina, 'step2'],
+            ['assets/ekaterina_model_idle.png', ASSETS.ekaterina, 'idle'],
+            ['assets/ekaterina_model_jump.png', ASSETS.ekaterina, 'jump'],
+            ['assets/ekaterina_model_fall.png', ASSETS.ekaterina, 'fall']
+          ] : []),
+          ...(char === 'alina' ? [
+            ['assets/alina_model_step1.png', ASSETS.alina, 'step1'],
+            ['assets/alina_model_step2.png', ASSETS.alina, 'step2'],
+            ['assets/alina_model_idle.png', ASSETS.alina, 'idle'],
+            ['assets/alina_model_jump.png', ASSETS.alina, 'jump'],
+            ['assets/alina_model_fall.png', ASSETS.alina, 'fall']
+          ] : []),
           ['assets/enemy.png', ASSETS, 'enemy'], 
           ['assets/jumper.png', ASSETS, 'jumper'],
           ['assets/ksenia_photo.png', ASSETS.ksenia, 'photo'], 
@@ -452,7 +778,10 @@
           ['assets/programmer_td.png', ASSETS, 'programmer_td'], 
           [`assets/alina_td.png`, ASSETS, 'alina_td'], 
           [`assets/ekaterina_td.png`, ASSETS, 'ekaterina_td'], 
-          ['assets/enemy_td.png', ASSETS, 'enemy_td']
+          ['assets/enemy_td.png', ASSETS, 'enemy_td'],
+          ['assets/manager_td.png', ASSETS, 'manager_td'],
+          ['assets/security_td.png', ASSETS, 'security_td'],
+          ['assets/boss_model.png', ASSETS, 'boss_model']
         ];
         
         let loadedCount = 0;
@@ -475,22 +804,40 @@
       function showBriefing(lvl) {
         currentLevel = lvl; 
         const b = BRIEFINGS[lvl];
-        
-        if (!b) {
-          console.error("Briefing for level " + lvl + " not found!");
-          return;
-        }
+        if (!b) { console.error("Briefing for level " + lvl + " not found!"); return; }
 
-        briefingContent.innerHTML = `
-          <div class="briefing-header">
-            <img src="${b.photo}" alt="${b.speaker}" onerror="this.style.background='#a855f7'; this.alt='👨‍'">
-            <div><h3>${b.speaker}</h3><p class="position">${b.role}</p></div>
-          </div>
-          <div class="briefing-text"><strong>${b.speaker}:</strong> Уровень ${lvl} начинается прямо сейчас.</div>
-          <div class="briefing-task"><h4>${b.task}</h4><p style="margin:0; line-height:1.7;">${b.desc}</p></div>
-          <div class="briefing-text">${b.warning}</div>
-          <div class="briefing-text" style="background:#0f3460; padding:20px; border-radius:8px; margin-top:20px;"><strong style="color:#fbbf24;">${b.tip}</strong></div>
-        `;
+        if(b.isMultiSpeaker) {
+          let dialogueHTML = b.dialogue.map(line => {
+            const sp = b.speakers[line.who];
+            return `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;padding:12px;background:#0f172a;border-radius:8px;border-left:3px solid #38bdf8;">
+              <img src="${sp.photo}" alt="${sp.name}" style="width:48px;height:48px;border-radius:50%;border:2px solid #475569;object-fit:cover;flex-shrink:0;" onerror="this.style.background='#a855f7'">
+              <div><div style="color:#38bdf8;font-size:13px;font-weight:bold;margin-bottom:4px;">${sp.name}</div><div style="color:#cbd5e1;font-size:15px;line-height:1.5;">${line.text}</div></div>
+            </div>`;
+          }).join('');
+          briefingContent.innerHTML = `
+            <div class="briefing-header" style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:10px;padding:20px;margin-bottom:20px;">
+              <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:15px;">
+                ${b.speakers.map(sp=>`<div style="text-align:center"><img src="${sp.photo}" alt="${sp.name}" style="width:60px;height:60px;border-radius:50%;border:3px solid #334155;object-fit:cover;" onerror="this.style.background='#7c3aed'"><div style="color:#94a3b8;font-size:11px;margin-top:4px;">${sp.name}</div></div>`).join('')}
+              </div>
+              <div style="text-align:center;color:#f59e0b;font-size:16px;font-weight:bold;">📢 ЭКСТРЕННОЕ СОВЕЩАНИЕ</div>
+            </div>
+            <div style="margin-bottom:20px;">${dialogueHTML}</div>
+            <div class="briefing-task"><h4>${b.task}</h4><p style="margin:0;line-height:1.7;">${b.desc}</p></div>
+            <div class="briefing-text">${b.warning}</div>
+            <div class="briefing-text" style="background:#0f3460;padding:20px;border-radius:8px;margin-top:20px;"><strong style="color:#fbbf24;">${b.tip}</strong></div>
+          `;
+        } else {
+          briefingContent.innerHTML = `
+            <div class="briefing-header">
+              <img src="${b.photo}" alt="${b.speaker}" onerror="this.style.background='#a855f7'; this.alt='👨‍'">
+              <div><h3>${b.speaker}</h3><p class="position">${b.role}</p></div>
+            </div>
+            <div class="briefing-text"><strong>${b.speaker}:</strong> Уровень ${lvl} начинается прямо сейчас.</div>
+            <div class="briefing-task"><h4>${b.task}</h4><p style="margin:0; line-height:1.7;">${b.desc}</p></div>
+            <div class="briefing-text">${b.warning}</div>
+            <div class="briefing-text" style="background:#0f3460; padding:20px; border-radius:8px; margin-top:20px;"><strong style="color:#fbbf24;">${b.tip}</strong></div>
+          `;
+        }
         briefingWrapper.scrollTop = 0; 
         gameState = 'BRIEFING'; 
         showScreen(screenBriefing);
@@ -530,7 +877,7 @@
           preGameScreen.style.display = 'none';
           gameState = 'PLAYING';
           
-          const trackMap = {1:'level1', 2:'level2', 3:'level3', 4:'level4'};
+          const trackMap = {1:'level1', 2:'level2', 3:'level3', 4:'level4', 5:'level5'};
           playBGM(trackMap[currentLevel]);
           
           lastTime = 0;
@@ -550,7 +897,7 @@
           stopBGM(); 
         } else { 
           pauseScreen.style.display = 'none'; 
-          const trackMap = {1:'level1', 2:'level2', 3:'level3', 4:'level4'};
+          const trackMap = {1:'level1', 2:'level2', 3:'level3', 4:'level4', 5:'level5'};
           playBGM(trackMap[currentLevel]);
           lastTime = 0; requestAnimationFrame(loop); 
         }
@@ -562,6 +909,7 @@
       };
 
       window.backToMenu = function() {
+        document.getElementById('finale-screen').classList.remove('active');
         isPaused = false; 
         pauseScreen.style.display = 'none'; 
         intermediateScreen.style.display = 'none';
@@ -583,72 +931,81 @@
       };
 
       function setupLevel(lvl) {
-        platforms = []; decorations = []; l3_decorations = []; enemies = [];
+        platforms = []; decorations = []; l3_decorations = []; enemies = []; stealthDecorations = [];
         bullets = []; enemyBullets = []; speechBubbles = []; particles = [];
         topDownDesks = []; programmers = []; visitors = []; coffeeSpots = [];
         visitSpawnTimer = 0; coffeeSpawnTimer = 0;
         const G = GROUND_Y, P = 'patrol', I = 'idle', J = 'jump';
         
         if(lvl === 1) {
-          document.getElementById('max-kills').textContent = 9; hudStress.style.display = ''; hudKills.style.display = ''; hudExtra.textContent = '';
+          document.getElementById('max-kills').textContent = 13; hudStress.style.display = ''; hudKills.style.display = ''; hudExtra.textContent = '';
           platforms = [
-            { x: 0, y: G, w: LEVEL_W[0], h: 90 }, { x: 375, y: 465, w: 240, h: 30 }, { x: 870, y: 345, w: 330, h: 30 },
-            { x: 1275, y: 495, w: 210, h: 30 }, { x: 1650, y: 375, w: 390, h: 30 }, { x: 2175, y: 255, w: 270, h: 30 },
-            { x: 2625, y: 465, w: 225, h: 30 }, { x: 3075, y: 315, w: 300, h: 30 }, { x: 3600, y: 435, w: 300, h: 30 },
-            { x: 700, y: G-90, w: 50, h: 90, type: 'cabinet' }, { x: 2300, y: G-90, w: 50, h: 90, type: 'cabinet' }
+            { x: 0, y: G, w: LEVEL_W[0], h: 90 }, { x: 975, y: 465, w: 240, h: 30 }, { x: 1470, y: 345, w: 330, h: 30 },
+            { x: 1875, y: 495, w: 210, h: 30 }, { x: 2250, y: 375, w: 390, h: 30 }, { x: 2775, y: 255, w: 270, h: 30 },
+            { x: 3225, y: 465, w: 225, h: 30 }, { x: 3675, y: 315, w: 300, h: 30 }, { x: 4200, y: 435, w: 300, h: 30 },
+            { x: 1300, y: G-90, w: 50, h: 90, type: 'cabinet' }, { x: 2900, y: G-90, w: 50, h: 90, type: 'cabinet' }
           ];
           decorations = [
-            { type: 'desk', x: 300, y: G }, { type: 'pc', x: 400, y: 465 }, { type: 'rollup', x: 950, y: 345 },
-            { type: 'pc', x: 1330, y: 495 }, { type: 'desk', x: 1800, y: G }, { type: 'rollup', x: 2750, y: 465 },
-            { type: 'pc', x: 3180, y: 315 }, { type: 'desk', x: 3750, y: G }, { type: 'rollup', x: 4000, y: G }
+            { type: 'desk', x: 900, y: G }, { type: 'pc', x: 1000, y: 465 }, { type: 'rollup', x: 1550, y: 345 },
+            { type: 'pc', x: 1930, y: 495 }, { type: 'desk', x: 2400, y: G }, { type: 'rollup', x: 3350, y: 465 },
+            { type: 'pc', x: 3780, y: 315 }, { type: 'desk', x: 4350, y: G }, { type: 'rollup', x: 4600, y: G }
           ];
           enemies = [
-            { x: 420, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 375, max: 555, dir: 1, phrase: CLIENT_PHRASES[0], dead: false, shootTimer: 90, name: "Маркетолог", onGround: false },
-            { x: 1020, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: I, min: 960, max: 1140, dir: 0, phrase: CLIENT_PHRASES[1], dead: false, shootTimer: 135, name: "РПЗ", onGround: false },
-            { x: 1335, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 1275, max: 1485, dir: -1, phrase: CLIENT_PHRASES[2], dead: false, shootTimer: 60, name: "Сотрудник", onGround: false },
-            { x: 1950, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 1650, max: 2250, dir: 1, phrase: CLIENT_PHRASES[3], dead: false, shootTimer: 75, name: "Дизайнер", onGround: false },
-            { x: 1750, y: 0, w: 60, h: 60, vy: 0, hp: 3, maxHp: 3, type: P, min: 1650, max: 2010, dir: 1, phrase: CLIENT_PHRASES[4], dead: false, shootTimer: 165, name: "Маркетолог", onGround: false },
-            { x: 2250, y: 0, w: 67, h: 67, vy: 0, hp: 4, maxHp: 4, type: I, min: 2175, max: 2415, dir: 0, phrase: CLIENT_PHRASES[5], dead: false, shootTimer: 105, name: "РПЗ", onGround: false },
-            { x: 2700, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 2625, max: 2850, dir: -1, phrase: CLIENT_PHRASES[6], dead: false, shootTimer: 45, name: "Сотрудник", onGround: false },
-            { x: 3150, y: 0, w: 54, h: 60, vy: 0, hp: 3, maxHp: 3, type: I, min: 3075, max: 3345, dir: 0, phrase: CLIENT_PHRASES[7], dead: false, shootTimer: 120, name: "РПЗ", onGround: false },
-            { x: 3700, y: 0, w: 75, h: 67, vy: 0, hp: 8, maxHp: 8, type: P, min: 3600, max: 3870, dir: 1, phrase: CLIENT_PHRASES[8], dead: false, shootTimer: 135, name: "Собственник", onGround: false }
+            { x: 1020, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 975, max: 1155, dir: 1, phrase: CLIENT_PHRASES[0], dead: false, shootTimer: 90, name: "Маркетолог", onGround: false },
+            { x: 1340, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: I, min: 1220, max: 1460, dir: 0, phrase: CLIENT_PHRASES[1], dead: false, shootTimer: 135, name: "РПЗ", onGround: false },
+            { x: 2150, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 2090, max: 2243, dir: -1, phrase: CLIENT_PHRASES[2], dead: false, shootTimer: 60, name: "Сотрудник", onGround: false },
+            { x: 2550, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 2255, max: 2583, dir: 1, phrase: CLIENT_PHRASES[3], dead: false, shootTimer: 75, name: "Дизайнер", onGround: false },
+            { x: 2700, y: 0, w: 60, h: 60, vy: 0, hp: 3, maxHp: 3, type: P, min: 2645, max: 2772, dir: 1, phrase: CLIENT_PHRASES[4], dead: false, shootTimer: 165, name: "Маркетолог", onGround: false },
+            { x: 3120, y: 0, w: 67, h: 67, vy: 0, hp: 4, maxHp: 4, type: I, min: 3050, max: 3220, dir: 0, phrase: CLIENT_PHRASES[5], dead: false, shootTimer: 105, name: "РПЗ", onGround: false },
+            { x: 3550, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 3453, max: 3672, dir: -1, phrase: CLIENT_PHRASES[6], dead: false, shootTimer: 45, name: "Сотрудник", onGround: false },
+            { x: 3750, y: 0, w: 54, h: 60, vy: 0, hp: 3, maxHp: 3, type: I, min: 3675, max: 3945, dir: 0, phrase: CLIENT_PHRASES[7], dead: false, shootTimer: 120, name: "РПЗ", onGround: false },
+            { x: 4600, y: 0, w: 75, h: 67, vy: 0, hp: 8, maxHp: 8, type: P, min: 4505, max: 4795, dir: 1, phrase: CLIENT_PHRASES[8], dead: false, shootTimer: 135, name: "Собственник", onGround: false },
+            { x: 1680, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 1480, max: 1793, dir: -1, phrase: CLIENT_PHRASES[2], dead: false, shootTimer: 85, name: "Дизайнер", onGround: false },
+            { x: 2920, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: I, min: 2775, max: 3045, dir: 0, phrase: CLIENT_PHRASES[1], dead: false, shootTimer: 110, name: "Аналитик", onGround: false },
+            { x: 4080, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 3978, max: 4197, dir: 1, phrase: CLIENT_PHRASES[3], dead: false, shootTimer: 70, name: "Тестировщик", onGround: false },
+            { x: 4420, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: I, min: 4200, max: 4500, dir: 0, phrase: CLIENT_PHRASES[6], dead: false, shootTimer: 95, name: "Менеджер", onGround: false }
           ];
         } else if(lvl === 2) {
-          document.getElementById('max-kills').textContent = 15; hudStress.style.display = ''; hudKills.style.display = ''; hudExtra.textContent = '';
+          document.getElementById('max-kills').textContent = 19; hudStress.style.display = ''; hudKills.style.display = ''; hudExtra.textContent = '';
           platforms = [
-            { x: 0, y: G, w: LEVEL_W[1], h: 90 }, { x: 350, y: 450, w: 200, h: 30 }, { x: 700, y: 320, w: 300, h: 30 },
-            { x: 1150, y: 480, w: 240, h: 30 }, { x: 1150, y: G-260, w: 70, h: 260, type: 'wall', label: '📦 Нет накладных' },
-            { x: 1550, y: 350, w: 350, h: 30 }, { x: 2050, y: 220, w: 250, h: 30 }, { x: 2450, y: 440, w: 280, h: 30 },
-            { x: 2450, y: G-250, w: 60, h: 250, type: 'wall', label: '🖨️ 1С упала' }, { x: 2900, y: 300, w: 220, h: 30 },
-            { x: 3250, y: 400, w: 300, h: 30 }, { x: 3700, y: 280, w: 350, h: 30 }, { x: 4100, y: 460, w: 200, h: 30 },
-            { x: 4100, y: G-270, w: 65, h: 270, type: 'wall', label: '🔥 Продакшен горит' },
-            { x: 4500, y: 350, w: 300, h: 30 }, { x: 5000, y: 240, w: 250, h: 30 }, { x: 5400, y: 420, w: 300, h: 30 }, { x: 5800, y: 300, w: 350, h: 30 }
+            { x: 0, y: G, w: LEVEL_W[1], h: 90 }, { x: 950, y: 450, w: 200, h: 30 }, { x: 1300, y: 320, w: 300, h: 30 },
+            { x: 1750, y: 480, w: 240, h: 30 }, { x: 1725, y: G-260, w: 70, h: 260, type: 'wall', label: '📦 Нет накладных' },
+            { x: 2150, y: 350, w: 350, h: 30 }, { x: 2650, y: 220, w: 250, h: 30 }, { x: 3050, y: 440, w: 280, h: 30 },
+            { x: 3025, y: G-250, w: 60, h: 250, type: 'wall', label: '🖨️ 1С упала' }, { x: 3500, y: 300, w: 220, h: 30 },
+            { x: 3850, y: 400, w: 300, h: 30 }, { x: 4300, y: 280, w: 350, h: 30 }, { x: 4700, y: 460, w: 200, h: 30 },
+            { x: 4675, y: G-270, w: 65, h: 270, type: 'wall', label: '🔥 Продакшен горит' },
+            { x: 5100, y: 350, w: 300, h: 30 }, { x: 5600, y: 240, w: 250, h: 30 }, { x: 6000, y: 420, w: 300, h: 30 }, { x: 6400, y: 300, w: 350, h: 30 }
           ];
           decorations = [
-            { type: 'pallet', x: 300, y: G }, { type: 'server', x: 430, y: 320 }, { type: 'forklift', x: 850, y: G },
-            { type: '1c_logo', x: 650, y: G }, { type: 'pallet', x: 1100, y: G }, { type: 'server', x: 1400, y: 320 },
-            { type: 'forklift', x: 1700, y: G }, { type: '1c_logo', x: 2000, y: G }, { type: 'pallet', x: 2300, y: G },
-            { type: 'server', x: 2600, y: 350 }, { type: 'forklift', x: 3000, y: G }, { type: '1c_logo', x: 3400, y: G },
-            { type: 'pallet', x: 3800, y: G }, { type: 'server', x: 4200, y: 350 }, { type: 'forklift', x: 4600, y: G },
-            { type: '1c_logo', x: 5100, y: G }, { type: 'pallet', x: 5500, y: G }, { type: 'server', x: 5900, y: 350 }
+            { type: 'pallet', x: 900, y: G }, { type: 'server', x: 1030, y: 320 }, { type: 'forklift', x: 1450, y: G },
+            { type: '1c_logo', x: 1250, y: G }, { type: 'pallet', x: 1700, y: G }, { type: 'server', x: 2000, y: 320 },
+            { type: 'forklift', x: 2300, y: G }, { type: '1c_logo', x: 2600, y: G }, { type: 'pallet', x: 2900, y: G },
+            { type: 'server', x: 3200, y: 350 }, { type: 'forklift', x: 3600, y: G }, { type: '1c_logo', x: 4000, y: G },
+            { type: 'pallet', x: 4400, y: G }, { type: 'server', x: 4800, y: 350 }, { type: 'forklift', x: 5200, y: G },
+            { type: '1c_logo', x: 5700, y: G }, { type: 'pallet', x: 6100, y: G }, { type: 'server', x: 6500, y: 350 }
           ];
           enemies = [
-            { x: 400, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: J, min: 300, max: 600, dir: 1, phrase: CLIENT_PHRASES[9], dead: false, shootTimer: 90, name: "Бэкендер", canJump: true, onGround: false },
-            { x: 900, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: J, min: 800, max: 1050, dir: 0, phrase: CLIENT_PHRASES[10], dead: false, shootTimer: 135, name: "Тестировщик", canJump: true, onGround: false },
-            { x: 1300, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 1150, max: 1400, dir: -1, phrase: CLIENT_PHRASES[11], dead: false, shootTimer: 60, name: "Менеджер склада", onGround: false },
-            { x: 1700, y: 0, w: 54, h: 60, vy: 0, hp: 3, maxHp: 3, type: P, min: 1550, max: 1900, dir: 1, phrase: CLIENT_PHRASES[12], dead: false, shootTimer: 165, name: "Интегратор 1С", onGround: false },
-            { x: 2150, y: 0, w: 60, h: 60, vy: 0, hp: 3, maxHp: 3, type: J, min: 2050, max: 2300, dir: 0, phrase: CLIENT_PHRASES[13], dead: false, shootTimer: 105, name: "Бухгалтер", canJump: true, onGround: false },
-            { x: 2600, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 2450, max: 2750, dir: -1, phrase: CLIENT_PHRASES[14], dead: false, shootTimer: 45, name: "Фулфилмент", onGround: false },
-            { x: 3000, y: 0, w: 54, h: 60, vy: 0, hp: 3, maxHp: 3, type: I, min: 2900, max: 3120, dir: 0, phrase: CLIENT_PHRASES[15], dead: false, shootTimer: 120, name: "DevOps", onGround: false },
-            { x: 3400, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: J, min: 3250, max: 3550, dir: 1, phrase: CLIENT_PHRASES[16], dead: false, shootTimer: 75, name: "Аналитик", canJump: true, onGround: false },
-            { x: 3800, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 3700, max: 4050, dir: -1, phrase: CLIENT_PHRASES[17], dead: false, shootTimer: 80, name: "Архитектор", onGround: false },
-            { x: 4200, y: 0, w: 54, h: 60, vy: 0, hp: 3, maxHp: 3, type: J, min: 4100, max: 4450, dir: 1, phrase: "Нужен Kubernetes", dead: false, shootTimer: 90, name: "Бэкендер-старший", canJump: true, onGround: false },
-            { x: 4600, y: 0, w: 60, h: 60, vy: 0, hp: 3, maxHp: 3, type: I, min: 4500, max: 4800, dir: 0, phrase: "А где нагрузочное?", dead: false, shootTimer: 110, name: "QA Lead", onGround: false },
-            { x: 5100, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 5000, max: 5300, dir: 1, phrase: "Добавим блокчейн", dead: false, shootTimer: 85, name: "Бизнес-аналитик", onGround: false },
-            { x: 5500, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: J, min: 5400, max: 5700, dir: -1, phrase: "Перенесём дедлайн", dead: false, shootTimer: 70, name: "Продакт-менеджер", canJump: true, onGround: false },
-            { x: 5900, y: 0, w: 54, h: 60, vy: 0, hp: 3, maxHp: 3, type: P, min: 5800, max: 6150, dir: 1, phrase: "Финальные правки!", dead: false, shootTimer: 65, name: "Заказчик", onGround: false },
-            { x: 6000, y: 0, w: 75, h: 67, vy: 0, hp: 12, maxHp: 12, type: P, min: 5800, max: 6200, dir: 1, phrase: "Интеграцию в продакшен!", dead: false, shootTimer: 90, name: "Собственник", onGround: false }
+            { x: 800, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: J, min: 5, max: 945, dir: 1, phrase: CLIENT_PHRASES[9], dead: false, shootTimer: 90, name: "Бэкендер", canJump: true, onGround: false },
+            { x: 1500, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: J, min: 1303, max: 1597, dir: 0, phrase: CLIENT_PHRASES[10], dead: false, shootTimer: 135, name: "Тестировщик", canJump: true, onGround: false },
+            { x: 2060, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 1993, max: 2093, dir: -1, phrase: CLIENT_PHRASES[11], dead: false, shootTimer: 60, name: "Менеджер склада", onGround: false },
+            { x: 2300, y: 0, w: 54, h: 60, vy: 0, hp: 3, maxHp: 3, type: P, min: 2153, max: 2497, dir: 1, phrase: CLIENT_PHRASES[12], dead: false, shootTimer: 165, name: "Интегратор 1С", onGround: false },
+            { x: 2950, y: 0, w: 60, h: 60, vy: 0, hp: 3, maxHp: 3, type: J, min: 2903, max: 2987, dir: 0, phrase: CLIENT_PHRASES[13], dead: false, shootTimer: 105, name: "Бухгалтер", canJump: true, onGround: false },
+            { x: 3400, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 3333, max: 3497, dir: -1, phrase: CLIENT_PHRASES[14], dead: false, shootTimer: 45, name: "Фулфилмент", onGround: false },
+            { x: 3600, y: 0, w: 54, h: 60, vy: 0, hp: 3, maxHp: 3, type: I, min: 3503, max: 3717, dir: 0, phrase: CLIENT_PHRASES[15], dead: false, shootTimer: 120, name: "DevOps", onGround: false },
+            { x: 4000, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: J, min: 3853, max: 4147, dir: 1, phrase: CLIENT_PHRASES[16], dead: false, shootTimer: 75, name: "Аналитик", canJump: true, onGround: false },
+            { x: 4400, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 4303, max: 4647, dir: -1, phrase: CLIENT_PHRASES[17], dead: false, shootTimer: 80, name: "Архитектор", onGround: false },
+            { x: 4800, y: 0, w: 54, h: 60, vy: 0, hp: 3, maxHp: 3, type: J, min: 4703, max: 4897, dir: 1, phrase: "Нужен Kubernetes", dead: false, shootTimer: 90, name: "Бэкендер-старший", canJump: true, onGround: false },
+            { x: 5480, y: 0, w: 60, h: 60, vy: 0, hp: 3, maxHp: 3, type: I, min: 5403, max: 5597, dir: 0, phrase: "А где нагрузочное?", dead: false, shootTimer: 110, name: "QA Lead", onGround: false },
+            { x: 5700, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 5603, max: 5847, dir: 1, phrase: "Добавим блокчейн", dead: false, shootTimer: 85, name: "Бизнес-аналитик", onGround: false },
+            { x: 6100, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: J, min: 6003, max: 6297, dir: -1, phrase: "Перенесём дедлайн", dead: false, shootTimer: 70, name: "Продакт-менеджер", canJump: true, onGround: false },
+            { x: 6500, y: 0, w: 54, h: 60, vy: 0, hp: 3, maxHp: 3, type: P, min: 6403, max: 6747, dir: 1, phrase: "Финальные правки!", dead: false, shootTimer: 65, name: "Заказчик", onGround: false },
+            { x: 6330, y: 0, w: 75, h: 67, vy: 0, hp: 12, maxHp: 12, type: I, min: 6305, max: 6322, dir: 0, phrase: "Интеграцию в продакшен!", dead: false, shootTimer: 90, name: "Собственник", onGround: false },
+            { x: 1220, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 1153, max: 1297, dir: 1, phrase: "Тесты провалились!", dead: false, shootTimer: 80, name: "Разработчик", onGround: false },
+            { x: 2800, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: I, min: 2653, max: 2897, dir: 0, phrase: "Срочно в прод!", dead: false, shootTimer: 100, name: "Менеджер по продукту", onGround: false },
+            { x: 4220, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: P, min: 4153, max: 4297, dir: -1, phrase: "Нужна документация!", dead: false, shootTimer: 75, name: "Архитектор 2", onGround: false },
+            { x: 5900, y: 0, w: 54, h: 60, vy: 0, hp: 2, maxHp: 2, type: I, min: 5853, max: 5997, dir: 0, phrase: "Поправим скрипты!", dead: false, shootTimer: 110, name: "Системный аналитик", onGround: false }
           ];
+          level2Coffees = []; coffeeTimer2 = 0;
         } else if(lvl === 3) {
           document.getElementById('max-kills').textContent = '∞'; hudStress.style.display = 'none'; hudKills.style.display = ''; hudExtra.textContent = '⏱️ 2:00 | 📊 0%';
           level3Timer = 120;
@@ -683,34 +1040,106 @@
         } else if(lvl === 4) {
           hudStress.style.display = 'none'; hudKills.style.display = 'none'; hudExtra.textContent = '🤫 ТИХО!';
           document.getElementById('progress-bar').style.display = 'none';
-          
+
+          // Level 4 is 1200 x 2700 (4x taller than canvas)
+          // Outer walls
           stealthWalls = [
-            { x: 0, y: 0, w: 1200, h: 20 }, { x: 0, y: 655, w: 1200, h: 20 }, { x: 0, y: 0, w: 20, h: 675 }, { x: 1180, y: 0, w: 20, h: 675 },
-            { x: 200, y: 150, w: 800, h: 20 }, { x: 200, y: 300, w: 800, h: 20 }, { x: 200, y: 450, w: 800, h: 20 },
-            { x: 400, y: 150, w: 20, h: 150 }, { x: 600, y: 300, w: 20, h: 150 }, { x: 800, y: 450, w: 20, h: 150 },
-            { x: 1000, y: 150, w: 20, h: 150 }
+            { x:0, y:0, w:1200, h:20 }, { x:0, y:2680, w:1200, h:20 },
+            { x:0, y:0, w:20, h:2700 }, { x:1180, y:0, w:20, h:2700 },
+            // Horizontal dividers with gaps (bottom -> top)
+            // Wall at y=2150, gap at x=200-330
+            { x:20, y:2150, w:180, h:20 }, { x:330, y:2150, w:850, h:20 },
+            // Wall at y=1900, gap at x=720-850
+            { x:20, y:1900, w:700, h:20 }, { x:850, y:1900, w:330, h:20 },
+            // Wall at y=1650, gap at x=350-480
+            { x:20, y:1650, w:330, h:20 }, { x:480, y:1650, w:700, h:20 },
+            // Wall at y=1400, gap at x=820-950
+            { x:20, y:1400, w:800, h:20 }, { x:950, y:1400, w:230, h:20 },
+            // Wall at y=1150, gap at x=100-230
+            { x:20, y:1150, w:80, h:20 }, { x:230, y:1150, w:950, h:20 },
+            // Wall at y=900, gap at x=650-780
+            { x:20, y:900, w:630, h:20 }, { x:780, y:900, w:400, h:20 },
+            // Wall at y=650, gap at x=200-330
+            { x:20, y:650, w:180, h:20 }, { x:330, y:650, w:850, h:20 },
+            // Wall at y=400, gap at x=900-1030
+            { x:20, y:400, w:880, h:20 }, { x:1030, y:400, w:150, h:20 },
+            // Wall at y=180, gap at x=540-670
+            { x:20, y:180, w:520, h:20 }, { x:670, y:180, w:510, h:20 },
+            // Vertical columns inside rooms
+            { x:500, y:420, w:20, h:130 }, { x:700, y:920, w:20, h:130 },
+            { x:400, y:1420, w:20, h:130 }, { x:800, y:1920, w:20, h:130 }
           ];
-          
+
           stealthGuards = [
-            { type: 'patrol', x: 300, y: 80, w: 30, h: 30, path: [{x:300,y:80}, {x:500,y:80}], speed: 1.5, idx: 0, visionRange: 120, visionAngle: 0.8, angle: 0 },
-            { type: 'rotate', x: 700, y: 220, w: 30, h: 30, angle: 0, timer: 0, turnInterval: 120, visionRange: 140, visionAngle: 0.7 },
-            { type: 'patrol', x: 900, y: 380, w: 30, h: 30, path: [{x:900,y:380}, {x:1100,y:380}], speed: 1.2, idx: 0, visionRange: 110, visionAngle: 0.9, angle: 0 },
-            { type: 'rotate', x: 500, y: 520, w: 30, h: 30, angle: Math.PI/2, timer: 0, turnInterval: 90, visionRange: 130, visionAngle: 0.6 },
-            { type: 'patrol', x: 250, y: 580, w: 30, h: 30, path: [{x:250,y:580}, {x:250,y:400}], speed: 1.8, idx: 0, visionRange: 100, visionAngle: 0.8, angle: Math.PI/2 }
+            // Room A (y=180-400): 2 rotating guards
+            { type:'rotate', x:300, y:270, w:30, h:30, angle:0, timer:0, turnInterval:100, visionRange:150, visionAngle:0.8 },
+            { type:'rotate', x:850, y:270, w:30, h:30, angle:Math.PI, timer:0, turnInterval:125, visionRange:140, visionAngle:0.9 },
+            // Room B (y=400-650): 2 patrol guards
+            { type:'patrol', x:100, y:510, w:30, h:30, path:[{x:40,y:510},{x:480,y:510}], speed:1.8, idx:0, visionRange:130, visionAngle:0.75, angle:0 },
+            { type:'patrol', x:700, y:510, w:30, h:30, path:[{x:540,y:510},{x:1150,y:510}], speed:2.0, idx:0, visionRange:130, visionAngle:0.75, angle:0 },
+            // Room C (y=650-900): 1 patrol guard
+            { type:'patrol', x:600, y:760, w:30, h:30, path:[{x:40,y:760},{x:1150,y:760}], speed:1.5, idx:0, visionRange:125, visionAngle:0.8, angle:0 },
+            // Room D (y=900-1150): 2 guards
+            { type:'patrol', x:200, y:1010, w:30, h:30, path:[{x:40,y:1010},{x:680,y:1010}], speed:1.8, idx:0, visionRange:140, visionAngle:0.7, angle:0 },
+            { type:'rotate', x:900, y:1010, w:30, h:30, angle:Math.PI/2, timer:0, turnInterval:90, visionRange:150, visionAngle:0.7 },
+            // Room E (y=1150-1400): 2 guards
+            { type:'patrol', x:500, y:1260, w:30, h:30, path:[{x:40,y:1260},{x:1150,y:1260}], speed:2.2, idx:0, visionRange:140, visionAngle:0.75, angle:0 },
+            { type:'rotate', x:700, y:1350, w:30, h:30, angle:-Math.PI/2, timer:0, turnInterval:80, visionRange:130, visionAngle:0.8 },
+            // Room F (y=1400-1650): 1 patrol guard
+            { type:'patrol', x:600, y:1510, w:30, h:30, path:[{x:40,y:1510},{x:1150,y:1510}], speed:2.0, idx:0, visionRange:130, visionAngle:0.8, angle:0 },
+            // Room G (y=1650-1900): 2 guards
+            { type:'patrol', x:300, y:1760, w:30, h:30, path:[{x:40,y:1760},{x:1150,y:1760}], speed:1.8, idx:0, visionRange:140, visionAngle:0.7, angle:0 },
+            { type:'rotate', x:800, y:1820, w:30, h:30, angle:Math.PI, timer:0, turnInterval:110, visionRange:130, visionAngle:0.8 },
+            // Room H (y=1900-2150): 2 guards
+            { type:'patrol', x:200, y:2010, w:30, h:30, path:[{x:40,y:2010},{x:780,y:2010}], speed:1.5, idx:0, visionRange:130, visionAngle:0.8, angle:0 },
+            { type:'patrol', x:900, y:2080, w:30, h:30, path:[{x:830,y:2080},{x:1150,y:2080}], speed:1.8, idx:0, visionRange:130, visionAngle:0.8, angle:0 }
           ];
-          
-          stealthGoal = { x: 550, y: 30, w: 100, h: 80 };
-          player.x = 600; player.y = 600; player.w = 40; player.h = 40;
+
+          stealthDecorations = [
+            { type:'cooler', x:100, y:250 }, { type:'ficus', x:1050, y:255 },
+            { type:'ficus', x:50, y:490 },  { type:'cooler', x:900, y:730 },
+            { type:'ficus', x:80, y:985 },  { type:'cooler', x:500, y:1185 },
+            { type:'ficus', x:1050, y:1285 },{ type:'cooler', x:200, y:1475 },
+            { type:'ficus', x:1050, y:1680 },{ type:'ficus', x:50, y:1980 },
+            { type:'cooler', x:1050, y:2030 },{ type:'ficus', x:580, y:2250 },
+            { type:'cooler', x:100, y:2280 }
+          ];
+
+          stealthGoal = { x: 480, y: 30, w: 240, h: 130 };
+          player.x = 580; player.y = 2380; player.w = 40; player.h = 40;
+        } else if(lvl === 5) {
+          const G = GROUND_Y;
+          document.getElementById('max-kills').textContent = '1'; hudStress.style.display = ''; hudKills.style.display = ''; hudExtra.textContent = '😤 БОСС!';
+          document.getElementById('progress-bar').style.display = 'block';
+          platforms = [
+            { x: 0, y: G, w: 2400, h: 90 },
+            { x: 150, y: G-155, w: 210, h: 22 }, { x: 500, y: G-125, w: 210, h: 22 },
+            { x: 850, y: G-165, w: 210, h: 22 }, { x: 1200, y: G-135, w: 210, h: 22 },
+            { x: 1550, y: G-155, w: 210, h: 22 }, { x: 1900, y: G-125, w: 210, h: 22 },
+            { x: 2150, y: G-165, w: 210, h: 22 }
+          ];
+          coffeeTimer5 = 0; level5Coffees = []; bossProjectiles = [];
+          shieldActive = false; shieldTimer = 0; shieldCD = 0;
+          boss = {
+            x: 1950, y: G - 130, w: 140, h: 130,
+            hp: 600, maxHp: 600, phase: 1,
+            vx: -1.2, vy: 0, onGround: false,
+            attackTimer: 0, attackCD: 180,
+            flashTimer: 0, angryFace: 0,
+            minX: 1400, maxX: 2300
+          };
         }
         for(let e of enemies) { e.y = getGroundYAt(e.x) - e.h; e.vy = 0; e.onGround = false; }
       }
 
-      function getGroundYAt(x) { for(let p of platforms) { if(x >= p.x && x <= p.x + p.w) return p.y; } return GROUND_Y; }
+      function getGroundYAt(x) { let best = GROUND_Y; for(let p of platforms) { if(p.type==='wall') continue; if(x >= p.x && x <= p.x + p.w && p.y < best) best = p.y; } return best; }
 
       function resetState() {
-        totalKills = 0; stress = 100; cameraX = 0;
+        totalKills = 0; stress = 100; cameraX = 0; heatLevel = 0; heatOverheat = false;
         if(currentLevel === 4) {
-          player.x = 600; player.y = 600;
+          player.x = 580; player.y = 2380; cameraY = Math.max(0, 2380 - 337);
+        } else if(currentLevel === 5) {
+          player.x = 150; player.y = GROUND_Y - 60;
         } else {
           player.x = currentLevel === 3 ? 600 : 150; 
           player.y = currentLevel === 3 ? 340 : GROUND_Y - 60;
@@ -722,16 +1151,11 @@
       }
 
       const keys = {};
+      window.__gkeys = keys; // expose for mobile controls
       window.addEventListener('keydown', e => {
         keys[e.code] = true;
         if (e.code === 'Escape' && gameState === 'PLAYING') { e.preventDefault(); window.togglePause(); }
-        
-        // F12 чит для 3 уровня
-        if ((e.key === 'F12' || e.code === 'F12') && currentLevel === 3 && gameState === 'PLAYING') {
-            e.preventDefault();
-            console.log('[DEBUG] Автопобеда на 3 уровне!');
-            showLevelComplete(3);
-        }
+        if (e.shiftKey && (e.code === 'KeyW') && gameState === 'PLAYING') { e.preventDefault(); showLevelComplete(currentLevel); }
       });
       window.addEventListener('keyup', e => keys[e.code] = false);
       canvas.addEventListener('mousedown', e => { if(e.button === 0) keys['Mouse'] = true; });
@@ -751,6 +1175,10 @@
           document.getElementById('progress-fill').style.width = Math.min(100, ((120 - level3Timer) / 120) * 100) + '%';
         } else if(currentLevel === 4) {
           hudExtra.textContent = '🤫 ТИХО!';
+        } else if(currentLevel === 5) {
+          if(boss) { let pct = Math.round(boss.hp/boss.maxHp*100); hudExtra.textContent = `😤 КЛИЕНТ: ${pct}% HP | ${boss.phase}⭐ фаза`; }
+          document.getElementById('progress-bar').style.display = 'block';
+          document.getElementById('progress-fill').style.width = boss ? Math.min(100,(1-boss.hp/boss.maxHp)*100)+'%' : '0%';
         } else { 
           hudExtra.textContent = ''; 
           document.getElementById('progress-bar').style.display = 'block';
@@ -802,13 +1230,15 @@
         level3Timer -= 1/60;
         if(level3Timer <= 0) {
           let avgProd = programmers.reduce((s, p) => s + p.productivity, 0) / programmers.length;
-          if(avgProd >= 40) showEnd('ПОБЕДА', ['✅ Алексей доволен!','✅ Программисты работали продуктивно','✅ Средняя продуктивность: ' + Math.floor(avgProd) + '%','🌐 <b>Все проекты под контролем.</b>','🏆 <b>Теперь ты Senior!</b>','💤 CTO спокойно вернулся из отпуска.','🎉 <b>Тебя повысили!</b>']);
+          if(avgProd >= 40) showLevelComplete(3);
           else showEnd('GAME OVER', ['❌ Продуктивность упала до ' + Math.floor(avgProd) + '%','❌ Алексей вернулся из отпуска раньше.','🔄 Попробуйте снова. Следите за спящими!']);
           return;
         }
         coffeeSpawnTimer++; if(coffeeSpawnTimer >= 900) { spawnCoffee(); coffeeSpawnTimer = 0; }
         if(player.shootCD > 0) player.shootCD--;
-        if((keys['Mouse'] || keys['KeyZ']) && player.shootCD <= 0) { playShootSound(); bullets.push({ x: player.x + player.w/2 + aimX*20, y: player.y + player.h/2 + aimY*20, vx: aimX*12, vy: aimY*12, life: 40 }); player.shootCD = 15; }
+        if(heatOverheat) { heatLevel=Math.max(0,heatLevel-1.0); if(heatLevel<=0) heatOverheat=false; }
+        else if(heatLevel>0) heatLevel=Math.max(0,heatLevel-0.4);
+        if((keys['Mouse']||keys['KeyZ']) && player.shootCD<=0 && !heatOverheat) { playShootSound(); bullets.push({x:player.x+player.w/2+aimX*20, y:player.y+player.h/2+aimY*20, vx:aimX*12, vy:aimY*12, life:40}); player.shootCD=15; heatLevel=Math.min(100,heatLevel+16); if(heatLevel>=100) heatOverheat=true; }
         for(let p of programmers) {
           p.stateTimer--;
           if(p.state === 'working') { p.productivity = Math.min(100, p.productivity + 0.1); if(p.stateTimer <= 0 && Math.random() < 0.003) { p.state = 'sleeping'; p.stateTimer = 180 + Math.random() * 300; p.productivity = 0; } }
@@ -865,61 +1295,60 @@
       }
 
       function updateStealth() {
+        const LEVEL_H4 = 2700;
         player.vx = 0; player.vy = 0;
-        if(keys['ArrowUp'] || keys['KeyW']) player.vy = -3;
-        if(keys['ArrowDown'] || keys['KeyS']) player.vy = 3;
-        if(keys['ArrowLeft'] || keys['KeyA']) player.vx = -3;
-        if(keys['ArrowRight'] || keys['KeyD']) player.vx = 3;
-        
+        if(keys['ArrowUp'] || keys['KeyW']) player.vy = -3.5;
+        if(keys['ArrowDown'] || keys['KeyS']) player.vy = 3.5;
+        if(keys['ArrowLeft'] || keys['KeyA']) player.vx = -3.5;
+        if(keys['ArrowRight'] || keys['KeyD']) player.vx = 3.5;
+
+        // Separate X and Y movement with wall collision
         let nextX = player.x + player.vx;
-        let nextY = player.y + player.vy;
-        
-        let collides = false;
+        let colX = false;
         for(let w of stealthWalls) {
-          if(nextX < w.x + w.w && nextX + player.w > w.x && nextY < w.y + w.h && nextY + player.h > w.y) {
-            collides = true; break;
-          }
+          if(nextX < w.x + w.w && nextX + player.w > w.x && player.y < w.y + w.h && player.y + player.h > w.y) { colX = true; break; }
         }
-        if(!collides) { player.x = nextX; player.y = nextY; }
+        if(!colX) player.x = Math.max(20, Math.min(1180 - player.w, nextX));
+
+        let nextY = player.y + player.vy;
+        let colY = false;
+        for(let w of stealthWalls) {
+          if(player.x < w.x + w.w && player.x + player.w > w.x && nextY < w.y + w.h && nextY + player.h > w.y) { colY = true; break; }
+        }
+        if(!colY) player.y = Math.max(20, Math.min(LEVEL_H4 - 20 - player.h, nextY));
+
+        // Camera follows player vertically
+        cameraY = Math.max(0, Math.min(player.y - CANVAS_H/2, LEVEL_H4 - CANVAS_H));
 
         for(let g of stealthGuards) {
           if(g.type === 'patrol') {
             let target = g.path[g.idx];
-            let dx = target.x - g.x;
-            let dy = target.y - g.y;
+            let dx = target.x - g.x, dy = target.y - g.y;
             let dist = Math.sqrt(dx*dx + dy*dy);
-            if(dist < 2) {
-              g.idx = (g.idx + 1) % g.path.length;
-            } else {
-              g.x += (dx/dist) * g.speed;
-              g.y += (dy/dist) * g.speed;
-            }
+            if(dist < 2) { g.idx = (g.idx + 1) % g.path.length; }
+            else { g.x += (dx/dist)*g.speed; g.y += (dy/dist)*g.speed; }
             g.angle = Math.atan2(dy, dx);
           } else if(g.type === 'rotate') {
             g.timer++;
-            if(g.timer >= g.turnInterval) {
-              g.angle += Math.PI / 2;
-              if(g.angle > Math.PI) g.angle -= 2*Math.PI;
-              g.timer = 0;
-            }
+            if(g.timer >= g.turnInterval) { g.angle += Math.PI/2; if(g.angle > Math.PI) g.angle -= 2*Math.PI; g.timer = 0; }
           }
-          
-          let dx = player.x - g.x;
-          let dy = player.y - g.y;
+          let dx = player.x + player.w/2 - (g.x + g.w/2);
+          let dy = player.y + player.h/2 - (g.y + g.h/2);
           let dist = Math.sqrt(dx*dx + dy*dy);
           if(dist < g.visionRange) {
             let angleToPlayer = Math.atan2(dy, dx);
             let angleDiff = angleToPlayer - g.angle;
             while(angleDiff > Math.PI) angleDiff -= 2*Math.PI;
             while(angleDiff < -Math.PI) angleDiff += 2*Math.PI;
-            if(Math.abs(angleDiff) < g.visionAngle / 2) {
+            if(Math.abs(angleDiff) < g.visionAngle/2) {
               showEnd('GAME OVER', ['🚨 ВАС ЗАМЕТИЛИ!','Сделка сорвалась. Клиент отказался.','🔄 Попробуйте снова.']);
               return;
             }
           }
         }
 
-        if(player.x < stealthGoal.x + stealthGoal.w && player.x + player.w > stealthGoal.x && player.y < stealthGoal.y + stealthGoal.h && player.y + player.h > stealthGoal.y) {
+        if(player.x < stealthGoal.x + stealthGoal.w && player.x + player.w > stealthGoal.x &&
+           player.y < stealthGoal.y + stealthGoal.h && player.y + player.h > stealthGoal.y) {
           showLevelComplete(4);
         }
         updateUI();
@@ -935,16 +1364,19 @@
         if(gameState !== 'PLAYING') return;
         if(currentLevel === 3) { updateTopDown(); return; }
         if(currentLevel === 4) { updateStealth(); return; }
+        if(currentLevel === 5) { updateLevel5(); return; }
 
-        if(keys['ArrowLeft'] || keys['KeyA']) player.vx = -4.5; else if(keys['ArrowRight'] || keys['KeyD']) player.vx = 7.5; else player.vx = player.autoSpeed;
-        player.facingRight = player.vx > 0;
+        if(keys['ArrowLeft'] || keys['KeyA']) player.vx = -4.5; else if(keys['ArrowRight'] || keys['KeyD']) player.vx = 7.5; else player.vx = 0;
+        if(player.vx !== 0) player.facingRight = player.vx > 0;
         if((keys['Space'] || keys['ArrowUp'] || keys['KeyW']) && player.onGround) { player.vy = player.jump; player.onGround = false; }
-        player.vy += 0.8; player.x += player.vx; player.y += player.vy;
+        player.vy += 0.55; player.x += player.vx; player.y += player.vy;
         player.onGround = false;
         for(let p of platforms) { if(player.x + player.w > p.x && player.x < p.x + p.w && player.y + player.h >= p.y && player.y + player.h <= p.y + 22 && player.vy >= 0) { player.y = p.y - player.h; player.vy = 0; player.onGround = true; } }
         handleWallCollision(player); cameraX = Math.max(0, Math.min(player.x - 350, LEVEL_W[currentLevel-1] - CANVAS_W));
         if(player.shootCD > 0) player.shootCD--;
-        if((keys['Mouse'] || keys['KeyZ']) && player.shootCD <= 0) { playShootSound(); let d = player.facingRight?1:-1; bullets.push({x:player.x+(d*player.w), y:player.y+22, vx:13.5*d, life:100}); player.shootCD=18; }
+        if(heatOverheat) { heatLevel=Math.max(0,heatLevel-1.0); if(heatLevel<=0) heatOverheat=false; }
+        else if(heatLevel>0) heatLevel=Math.max(0,heatLevel-0.4);
+        if((keys['Mouse']||keys['KeyZ']) && player.shootCD<=0 && !heatOverheat) { playShootSound(); let d=player.facingRight?1:-1; bullets.push({x:player.x+(d*player.w), y:player.y+22, vx:13.5*d, life:100}); player.shootCD=18; heatLevel=Math.min(100,heatLevel+16); if(heatLevel>=100) heatOverheat=true; }
         for(let e of enemies) {
           if(e.dead) continue; e.vy += 0.8; e.y += e.vy; e.onGround = false;
           for(let p of platforms) { if(e.x + e.w > p.x && e.x < p.x + p.w && e.y + e.h >= p.y && e.y + e.h <= p.y + 22 && e.vy >= 0) { e.y = p.y - e.h; e.vy = 0; e.onGround = true; } }
@@ -961,6 +1393,17 @@
         if(player.invuln<=0) { for(let e of enemies) { if(!e.dead && player.x<e.x+e.w && player.x+player.w>e.x && player.y<e.y+e.h && player.y+player.h>e.y) { stress-=20; player.invuln=67; player.damageFlash=12; player.vx=(player.x<e.x?-1:1)*10.5; createParticles(player.x+player.w/2, player.y+player.h/2, '#ef4444', 12); if(stress<=0) showEnd('GAME OVER', ['❌ Стресс превышен. Выгорание.','🔄 Попробуйте снова.']); break; } } }
         for(let i=speechBubbles.length-1; i>=0; i--) { speechBubbles[i].life--; if(speechBubbles[i].life<=0) speechBubbles.splice(i,1); }
         if(player.y>CANVAS_H+150) showEnd('GAME OVER', ['❌ Менеджер упал в бэкенд.','🔄 Попробуйте снова.']);
+        if(currentLevel===2) {
+          const L2_SPOTS=[200,700,1200,2050,2950,3400,4300,5450,5900];
+          coffeeTimer2++;
+          if(coffeeTimer2>720 && level2Coffees.filter(c2=>c2.active).length<4) {
+            let xpos=L2_SPOTS[Math.floor(Math.random()*L2_SPOTS.length)];
+            if(!level2Coffees.find(c2=>c2.active&&Math.abs(c2.x-xpos)<200))
+              level2Coffees.push({x:xpos, y:GROUND_Y-34, active:true});
+            coffeeTimer2=0;
+          }
+        }
+        if(currentLevel===2) { for(let i=level2Coffees.length-1;i>=0;i--) { let c2=level2Coffees[i]; if(!c2.active) continue; if(Math.abs(c2.x+13-(player.x+player.w/2))<38 && Math.abs(c2.y+13-(player.y+player.h/2))<38) { stress=Math.min(100,stress+20); c2.active=false; createParticles(c2.x+13,c2.y+13,'#f59e0b',12); speechBubbles.push({x:player.x-20,y:player.y-30,text:'☕ +20 HP!',life:70,maxLife:70}); } } }
         let idx=currentLevel-1; if(player.x>FINISH_X[idx] && gameState==='PLAYING') { if(currentLevel===1) showLevelComplete(1); else showLevelComplete(2); }
         for(let i=particles.length-1; i>=0; i--) { let p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=1.2; p.life--; if(p.life<=0) particles.splice(i,1); }
         if(player.damageFlash>0) player.damageFlash--;
@@ -978,19 +1421,952 @@
         else if(type==='ficus') { ctx.fillStyle='#92400e'; ctx.fillRect(x+5, y-15, 20, 20); ctx.fillStyle='#15803d'; ctx.beginPath(); ctx.arc(x+15, y-25, 18, 0, Math.PI*2); ctx.fill(); ctx.fillStyle='#22c55e'; ctx.beginPath(); ctx.arc(x+8, y-32, 12, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(x+24, y-28, 11, 0, Math.PI*2); ctx.fill(); }
       }
 
+      function drawLevel1BG() {
+        const W = LEVEL_W[0]; // 4800
+        const G = GROUND_Y;   // 585
+        const T = Date.now();
+
+        // === BASE GRADIENT (dark datacenter/office) ===
+        let bgGrad = ctx.createLinearGradient(0, 0, 0, G);
+        bgGrad.addColorStop(0, '#020b18');
+        bgGrad.addColorStop(0.45, '#0b1929');
+        bgGrad.addColorStop(1, '#0f2236');
+        ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, W, G);
+
+        // === SUBTLE GRID (IDE / terminal feel) ===
+        ctx.strokeStyle = 'rgba(30,58,82,0.25)'; ctx.lineWidth = 1;
+        for(let x=0; x<W; x+=80){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,G); ctx.stroke(); }
+        for(let y=0; y<G; y+=60){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+        // === CEILING STRIP ===
+        ctx.fillStyle='#091521'; ctx.fillRect(0,0,W,30);
+        ctx.strokeStyle='rgba(56,189,248,0.18)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(0,30); ctx.lineTo(W,30); ctx.stroke();
+        // Ceiling vent grilles
+        for(let x=80; x<W; x+=320){
+          ctx.fillStyle='rgba(15,30,50,0.8)'; ctx.fillRect(x,4,160,18);
+          for(let vx=x+8; vx<x+155; vx+=14){ ctx.fillStyle='rgba(56,189,248,0.15)'; ctx.fillRect(vx,6,8,14); }
+        }
+
+        // === BACKGROUND: SERVER RACKS (silhouettes, far back) ===
+        const rackX = [160,620,1100,1560,2020,2480,2940,3400,3860,4320,4700];
+        for(let rx of rackX) {
+          ctx.fillStyle='rgba(10,18,28,0.9)'; ctx.fillRect(rx, G-280, 48, 280);
+          ctx.fillStyle='rgba(20,35,55,0.6)'; ctx.fillRect(rx+2, G-275, 44, 10);
+          for(let row=0; row<9; row++){
+            let ry = G-260+row*27;
+            ctx.fillStyle='rgba(10,20,35,0.9)'; ctx.fillRect(rx+4, ry, 40, 20);
+            // LED status lights (time-based flicker)
+            for(let li=0; li<3; li++){
+              let phase = (T/1000 + rx*0.007 + row*0.3 + li*1.1) % 4;
+              let col = phase < 0.05 ? '#ef4444' : '#10b981';
+              ctx.fillStyle = col;
+              ctx.fillRect(rx+6+li*12, ry+7, 7, 7);
+            }
+          }
+        }
+
+        // === GIANT MONITOR SCREENS (floating in mid-background) ===
+        const SCREENS = [
+          {x:300,  y:100, w:300, h:175, lines:['$ git push origin main','> Enumerating objects: 47','> Compressing: 100% (31/31)','> Writing objects: 100%','remote: Resolving deltas...','✓  Deploy triggered!'], colors:['#10b981','#475569','#475569','#64748b','#64748b','#10b981']},
+          {x:980,  y:80,  w:340, h:200, lines:['🔧 CI Pipeline: main','──────────────────────','✓  build    [ 42s ]','✓  lint     [  8s ]','✓  tests    [ 2m3s ]','✓  coverage [ 87% ]','⟶  deploy   [ ...  ]'], colors:['#38bdf8','#334155','#10b981','#10b981','#10b981','#fbbf24','#f97316']},
+          {x:1980, y:90,  w:310, h:180, lines:['Git Graph  (origin/main)','','* a9f2e1c  fix: hotfix','*   7d3b891  Merge PR #142','|\\\\','| * 3c8f120  feat: filters','|/','* 1a2b3c4  release v1.2'], colors:['#6366f1','#334155','#fbbf24','#38bdf8','#475569','#a855f7','#475569','#10b981']},
+          {x:2900, y:100, w:330, h:185, lines:['PRODUCTION  ✓  LIVE','──────────────────────','  Uptime:    99.97%','  Latency:   142ms','  Errors:    0','  Deploy:    v2.3.1','  Build:     #447  ✓'], colors:['#10b981','#334155','#64748b','#64748b','#10b981','#38bdf8','#10b981']},
+          {x:3880, y:85,  w:310, h:195, lines:['$ git log --oneline -6','a1b2c3d (HEAD) feat: api','9f8e7d6 fix: timeout','5c4b3a2 chore: deps','3e2d1c0 feat: cache','1a0b9c8 release: v3.0','0z9y8x7 fix: critical'], colors:['#38bdf8','#10b981','#fbbf24','#64748b','#a855f7','#38bdf8','#ef4444']},
+        ];
+        for(let s of SCREENS){
+          // Glow behind screen
+          ctx.shadowColor='rgba(56,189,248,0.15)'; ctx.shadowBlur=20;
+          ctx.fillStyle='#0d1f33'; ctx.fillRect(s.x-12,s.y-8,s.w+24,s.h+16);
+          ctx.shadowBlur=0;
+          // Monitor bezel
+          ctx.fillStyle='#1e2d3d'; ctx.fillRect(s.x-6,s.y-4,s.w+12,s.h+8);
+          // Screen
+          ctx.fillStyle='#020d1a'; ctx.fillRect(s.x,s.y,s.w,s.h);
+          // Scanline overlay
+          ctx.fillStyle='rgba(0,0,0,0.06)';
+          for(let sy=s.y; sy<s.y+s.h; sy+=3) ctx.fillRect(s.x, sy, s.w, 1);
+          // Screen content
+          ctx.font='12px monospace';
+          for(let li=0; li<s.lines.length; li++){
+            ctx.fillStyle=s.colors[li]||'#475569';
+            // cursor blink on last active line
+            let txt = s.lines[li];
+            if(li===s.lines.length-1 && Math.floor(T/500)%2) txt += '█';
+            ctx.fillText(txt, s.x+10, s.y+22+li*22);
+          }
+          // Status bar at bottom of screen
+          ctx.fillStyle='#0f2236'; ctx.fillRect(s.x, s.y+s.h-14, s.w, 14);
+          ctx.fillStyle='#334155'; ctx.font='9px monospace';
+          ctx.fillText('  main  |  UTF-8  |  JS  |  Ln 142', s.x+5, s.y+s.h-4);
+          // Monitor stand
+          ctx.fillStyle='#0d1f33'; ctx.fillRect(s.x+s.w/2-15,s.y+s.h+8,30,12);
+          ctx.fillRect(s.x+s.w/2-28,s.y+s.h+20,56,8);
+        }
+
+        // === GIT BRANCH VISUALIZATION (mid-background) ===
+        const BY = 460; // main branch Y
+        ctx.shadowBlur=0;
+
+        // Main branch backbone
+        ctx.strokeStyle='rgba(16,185,129,0.55)'; ctx.lineWidth=3;
+        ctx.shadowColor='#10b981'; ctx.shadowBlur=6;
+        ctx.beginPath(); ctx.moveTo(0,BY); ctx.lineTo(W,BY); ctx.stroke();
+        ctx.shadowBlur=0;
+
+        // Commits on main
+        const mainCX = [150,500,850,1200,1600,2000,2400,2800,3200,3650,4100,4550];
+        for(let cx of mainCX){
+          ctx.fillStyle='#10b981'; ctx.beginPath(); ctx.arc(cx,BY,7,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='#020b18'; ctx.beginPath(); ctx.arc(cx,BY,3.5,0,Math.PI*2); ctx.fill();
+        }
+        ctx.fillStyle='rgba(16,185,129,0.5)'; ctx.font='bold 10px monospace';
+        ctx.fillText('main', 20, BY-10);
+
+        // Feature branches (bezier, subtle)
+        const FEATS = [
+          {s:300,  e:900,  dy:-75, label:'feature/catalog-filters', col:'rgba(99,102,241,0.65)'},
+          {s:650,  e:1150, dy:+65, label:'bugfix/loading-spinner',  col:'rgba(245,158,11,0.65)'},
+          {s:1400, e:2000, dy:-80, label:'release/v1.2',            col:'rgba(56,189,248,0.65)'},
+          {s:1750, e:2350, dy:+70, label:'hotfix/prod-crash',       col:'rgba(239,68,68,0.65)'},
+          {s:2600, e:3200, dy:-75, label:'feature/new-api',         col:'rgba(168,85,247,0.65)'},
+          {s:2950, e:3550, dy:+65, label:'chore/upgrade-deps',      col:'rgba(100,116,139,0.55)'},
+          {s:3450, e:4050, dy:-80, label:'release/v3.0',            col:'rgba(56,189,248,0.65)'},
+          {s:3800, e:4350, dy:+70, label:'perf/cache-layer',        col:'rgba(16,185,129,0.55)'},
+        ];
+        for(let b of FEATS){
+          ctx.strokeStyle=b.col; ctx.lineWidth=2;
+          ctx.beginPath();
+          ctx.moveTo(b.s, BY);
+          ctx.bezierCurveTo(b.s+70,BY, b.s+70,BY+b.dy, b.s+150,BY+b.dy);
+          ctx.lineTo(b.e-150, BY+b.dy);
+          ctx.bezierCurveTo(b.e-70,BY+b.dy, b.e-70,BY, b.e,BY);
+          ctx.stroke();
+          // Label
+          ctx.fillStyle=b.col; ctx.font='10px monospace';
+          ctx.fillText(b.label, b.s+155, BY+b.dy-(b.dy>0?-12:4));
+          // 2 commits on branch
+          for(let ci=0;ci<2;ci++){
+            let cx=b.s+170+ci*150;
+            ctx.fillStyle=b.col; ctx.beginPath(); ctx.arc(cx,BY+b.dy,5,0,Math.PI*2); ctx.fill();
+          }
+        }
+
+        // === CI/CD PIPELINE BANNER (near top, repeating) ===
+        const PIPE_STAGES=[
+          {label:'💻 DEV',    col:'#6366f1'},
+          {label:'⚙️ BUILD',  col:'#f59e0b'},
+          {label:'🧪 TEST',   col:'#38bdf8'},
+          {label:'🔧 STAGE',  col:'#a855f7'},
+          {label:'🚀 DEPLOY', col:'#10b981'},
+        ];
+        const PIPE_SPACING = 960; // repeat pipeline every 960px
+        for(let rep=0; rep<5; rep++){
+          let ox = rep*PIPE_SPACING+60;
+          // Connecting dashed line
+          ctx.strokeStyle='rgba(71,85,105,0.3)'; ctx.lineWidth=1; ctx.setLineDash([6,5]);
+          ctx.beginPath(); ctx.moveTo(ox,50); ctx.lineTo(ox+860,50); ctx.stroke();
+          ctx.setLineDash([]);
+          // Stage pills
+          for(let si=0; si<PIPE_STAGES.length; si++){
+            let ps=PIPE_STAGES[si], px=ox+si*185;
+            ctx.fillStyle=ps.col+'22';
+            ctx.strokeStyle=ps.col+'88'; ctx.lineWidth=1;
+            ctx.beginPath(); roundRect(ctx,px,36,130,28,6); ctx.fill(); ctx.stroke();
+            ctx.fillStyle=ps.col; ctx.font='bold 12px monospace'; ctx.textAlign='center';
+            ctx.fillText(ps.label, px+65, 55); ctx.textAlign='left';
+            // Arrow between stages
+            if(si<4){ ctx.fillStyle='rgba(71,85,105,0.5)'; ctx.font='16px monospace'; ctx.fillText('→', px+133, 55); }
+          }
+        }
+
+        // === FLOATING VERSION TAGS ===
+        const VTAGS=[
+          {x:350,  y:370, text:'v0.9.0-alpha', col:'#64748b'},
+          {x:850,  y:395, text:'v1.0.0 ✓',    col:'#10b981'},
+          {x:1450, y:375, text:'v1.2.3',       col:'#10b981'},
+          {x:2150, y:390, text:'v2.0.0-beta',  col:'#f59e0b'},
+          {x:2650, y:370, text:'hotfix-7f2a',  col:'#ef4444'},
+          {x:3250, y:395, text:'v2.3.1 ✓',    col:'#10b981'},
+          {x:3900, y:375, text:'v3.0.0',       col:'#38bdf8'},
+          {x:4400, y:390, text:'PROD ✓ LIVE',  col:'#10b981'},
+        ];
+        for(let t of VTAGS){
+          let tw=t.text.length*8+18;
+          ctx.fillStyle=t.col+'20'; ctx.strokeStyle=t.col+'60'; ctx.lineWidth=1;
+          ctx.beginPath(); roundRect(ctx,t.x,t.y-16,tw,22,4); ctx.fill(); ctx.stroke();
+          ctx.fillStyle=t.col+'cc'; ctx.font='bold 11px monospace';
+          ctx.fillText(t.text, t.x+8, t.y);
+        }
+
+        // === GROUND FLOOR ===
+        let gGrad=ctx.createLinearGradient(0,G,0,G+90);
+        gGrad.addColorStop(0,'#1a2e42'); gGrad.addColorStop(1,'#0b1929');
+        ctx.fillStyle=gGrad; ctx.fillRect(0,G,W,90);
+        // Floor glow line
+        ctx.strokeStyle='rgba(56,189,248,0.25)'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(0,G); ctx.lineTo(W,G); ctx.stroke();
+        // Tile lines
+        ctx.strokeStyle='rgba(30,50,70,0.6)'; ctx.lineWidth=1;
+        for(let x=0;x<W;x+=120){ ctx.beginPath(); ctx.moveTo(x,G); ctx.lineTo(x,G+90); ctx.stroke(); }
+      }
+
+      function roundRect(ctx, x, y, w, h, r) {
+        ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+        ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+        ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+        ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+        ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+        ctx.closePath();
+      }
+
+
+      function drawLevel2BG() {
+        const W = LEVEL_W[1]; // 6600
+        const G = GROUND_Y;   // 585
+        const T = Date.now();
+
+        // === BASE GRADIENT (warm amber/brown — 1C brand feel) ===
+        let bgGrad = ctx.createLinearGradient(0, 0, 0, G);
+        bgGrad.addColorStop(0, '#110a01');
+        bgGrad.addColorStop(0.5, '#1c1003');
+        bgGrad.addColorStop(1, '#251504');
+        ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, W, G);
+
+        // === GRID (warm tint) ===
+        ctx.strokeStyle = 'rgba(80,45,5,0.22)'; ctx.lineWidth = 1;
+        for(let x=0;x<W;x+=80){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,G); ctx.stroke(); }
+        for(let y=0;y<G;y+=60){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+        // === CEILING STRIP (amber themed) ===
+        ctx.fillStyle='#0e0801'; ctx.fillRect(0,0,W,28);
+        ctx.strokeStyle='rgba(245,158,11,0.3)'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.moveTo(0,28); ctx.lineTo(W,28); ctx.stroke();
+        // Ceiling lights (warm glow lamps)
+        for(let x=150; x<W; x+=400){
+          let flicker = 0.85 + 0.15*Math.sin(T/800 + x*0.003);
+          ctx.fillStyle=`rgba(245,158,11,${(0.12*flicker).toFixed(3)})`;
+          ctx.fillRect(x-40, 0, 80, 28);
+          ctx.fillStyle=`rgba(253,211,100,${(0.7*flicker).toFixed(3)})`;
+          ctx.fillRect(x-5, 6, 10, 14);
+          // Lamp glow cone
+          let lampGrad = ctx.createRadialGradient(x,28,0,x,28,120);
+          lampGrad.addColorStop(0,`rgba(245,158,11,${(0.08*flicker).toFixed(3)})`);
+          lampGrad.addColorStop(1,'rgba(245,158,11,0)');
+          ctx.fillStyle=lampGrad; ctx.fillRect(x-120,28,240,120);
+        }
+
+        // === 1C SYSTEM NODES (floating integration architecture) ===
+        const NODES = [
+          {x:220,  y:140, w:170, h:70, label:'1С:ERP',          sub:'Управление предприятием', col:'#f59e0b'},
+          {x:580,  y:240, w:180, h:70, label:'1С:Бухгалтерия',   sub:'Учёт и отчётность',       col:'#d97706'},
+          {x:1000, y:130, w:160, h:70, label:'SOAP/XML шлюз',    sub:'Интеграционный слой',     col:'#92400e'},
+          {x:1380, y:250, w:180, h:70, label:'1С:CRM',           sub:'Клиенты и продажи',       col:'#f59e0b'},
+          {x:1780, y:130, w:175, h:70, label:'1С:Зарплата',      sub:'HR и расчёты',            col:'#d97706'},
+          {x:2200, y:240, w:180, h:70, label:'REST API Hub',     sub:'JSON / HTTP/2',           col:'#92400e'},
+          {x:2620, y:130, w:175, h:70, label:'1С:Торговля',      sub:'Закупки и склад',         col:'#f59e0b'},
+          {x:3050, y:250, w:180, h:70, label:'SAP адаптер',      sub:'Bi-directional sync',     col:'#78350f'},
+          {x:3480, y:130, w:175, h:70, label:'1С:Документооб.',  sub:'ЭДО / подписи',           col:'#d97706'},
+          {x:3920, y:240, w:185, h:70, label:'Excel / BI шина',  sub:'Выгрузка отчётов',        col:'#92400e'},
+          {x:4360, y:130, w:175, h:70, label:'1С:Розница',       sub:'POS / Кассы',             col:'#f59e0b'},
+          {x:4800, y:240, w:175, h:70, label:'Шина данных ESB',  sub:'Event streaming',         col:'#78350f'},
+          {x:5240, y:130, w:175, h:70, label:'1С:Производство',  sub:'MES интеграция',          col:'#d97706'},
+          {x:5680, y:240, w:185, h:70, label:'СУБД: PostgreSQL', sub:'Кластер реплик',          col:'#92400e'},
+          {x:6120, y:130, w:175, h:70, label:'1С:Консолидация',  sub:'Группа компаний',         col:'#f59e0b'},
+        ];
+
+        // Draw connection lines FIRST (behind nodes)
+        for(let i=0; i<NODES.length-1; i++){
+          let a=NODES[i], b=NODES[i+1];
+          let ax=a.x+a.w, ay=a.y+a.h/2, bx=b.x, by=b.y+b.h/2;
+          // Animated data packet (dot moving along line)
+          let prog = ((T/1800 + i*0.37) % 1);
+          let mx = ax + (bx-ax)*prog, my = ay + (by-ay)*prog;
+          ctx.strokeStyle='rgba(245,158,11,0.25)'; ctx.lineWidth=1.5; ctx.setLineDash([6,8]);
+          ctx.beginPath(); ctx.moveTo(ax,ay); ctx.bezierCurveTo(ax+80,ay,bx-80,by,bx,by); ctx.stroke();
+          ctx.setLineDash([]);
+          // Data packet dot
+          ctx.fillStyle='rgba(253,211,100,0.9)'; ctx.beginPath(); ctx.arc(mx,my,4,0,Math.PI*2); ctx.fill();
+          // Arrow at end
+          ctx.fillStyle='rgba(245,158,11,0.4)';
+          ctx.beginPath(); ctx.moveTo(bx-2,by); ctx.lineTo(bx-10,by-5); ctx.lineTo(bx-10,by+5); ctx.closePath(); ctx.fill();
+        }
+
+        // Draw cross-connections (some extra arcs for architecture feel)
+        const CROSS = [[0,3],[1,4],[2,5],[5,8],[6,9],[7,10],[10,13],[11,14]];
+        for(let [ai,bi] of CROSS){
+          let a=NODES[ai], b=NODES[bi];
+          ctx.strokeStyle='rgba(120,53,15,0.18)'; ctx.lineWidth=1; ctx.setLineDash([3,10]);
+          ctx.beginPath(); ctx.moveTo(a.x+a.w/2,a.y+a.h); ctx.bezierCurveTo(a.x+a.w/2,a.y+a.h+80,b.x+b.w/2,b.y+b.h+80,b.x+b.w/2,b.y+b.h); ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        // Draw node boxes
+        for(let n of NODES){
+          // Shadow/glow
+          ctx.shadowColor=n.col; ctx.shadowBlur=10;
+          // Box background
+          let boxGrad=ctx.createLinearGradient(n.x,n.y,n.x,n.y+n.h);
+          boxGrad.addColorStop(0,n.col+'28'); boxGrad.addColorStop(1,n.col+'0e');
+          ctx.fillStyle=boxGrad; ctx.fillRect(n.x,n.y,n.w,n.h);
+          // Border
+          ctx.strokeStyle=n.col+'99'; ctx.lineWidth=1.5;
+          ctx.strokeRect(n.x,n.y,n.w,n.h);
+          // Top accent bar
+          ctx.fillStyle=n.col+'cc'; ctx.fillRect(n.x,n.y,n.w,4);
+          ctx.shadowBlur=0;
+          // 1C logo badge (on 1C nodes)
+          if(n.label.startsWith('1С')){
+            ctx.fillStyle=n.col; ctx.font='bold 14px monospace'; ctx.textAlign='center';
+            ctx.fillText('1С', n.x+18, n.y+22); ctx.textAlign='left';
+            ctx.strokeStyle=n.col+'88'; ctx.lineWidth=1;
+            ctx.strokeRect(n.x+6,n.y+8,24,18);
+          }
+          // Label
+          let labelX = n.label.startsWith('1С') ? n.x+36 : n.x+10;
+          ctx.fillStyle='rgba(253,211,100,0.95)'; ctx.font='bold 12px monospace';
+          ctx.fillText(n.label.replace('1С:',''), labelX, n.y+26);
+          // Sublabel
+          ctx.fillStyle='rgba(161,117,55,0.85)'; ctx.font='10px monospace';
+          ctx.fillText(n.sub, n.x+8, n.y+48);
+          // Status indicator (pulsing dot)
+          let pulse = 0.6+0.4*Math.sin(T/600+n.x*0.005);
+          ctx.fillStyle=`rgba(16,185,129,${pulse.toFixed(2)})`; ctx.beginPath(); ctx.arc(n.x+n.w-14,n.y+14,5,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='rgba(16,185,129,0.2)'; ctx.beginPath(); ctx.arc(n.x+n.w-14,n.y+14,8,0,Math.PI*2); ctx.fill();
+          // Exchange counter
+          ctx.fillStyle='rgba(161,117,55,0.7)'; ctx.font='9px monospace';
+          let cnt = Math.floor((T/1000+n.x)%9999);
+          ctx.fillText('↕ '+cnt.toString().padStart(4,'0'), n.x+8, n.y+64);
+        }
+
+        // === XML/JSON CODE FRAGMENTS (floating data snippets) ===
+        const FRAGMENTS = [
+          {x:430,  y:360, lines:['<Документ>','  <Номер>СФ-00142</Номер>','  <Сумма>148750.00</Сумма>','  <НДС>24791.67</НДС>','</Документ>'], col:'rgba(245,158,11,0.55)'},
+          {x:1050, y:340, lines:['POST /api/v2/sync','Content-Type: application/json','{','  "entity":"Контрагент",','  "action":"upsert"','}'], col:'rgba(253,211,100,0.5)'},
+          {x:1700, y:370, lines:['SELECT ТЧ.Сумма','FROM РегистрНакопления','WHERE Организация =','  &ТекОрганизация','AND Период > &НачалоПериода'], col:'rgba(200,140,40,0.5)'},
+          {x:2450, y:350, lines:['<?xml version="1.0"?>','<КоммерческаяИнформация','  ВерсияФормата="2.09">','  <Каталог>','    <Ид>1c-goods</Ид>'], col:'rgba(245,158,11,0.5)'},
+          {x:3200, y:360, lines:['Обмен данными v8.3','────────────────────','✓  Выгружено: 4821','✓  Загружено: 1247','⚠  Конфликтов: 3'], col:'rgba(253,180,60,0.55)'},
+          {x:3950, y:345, lines:['function ВыгрузитьДанные()','  Отбор = Новый Структура;','  Отбор.Вставить("Тип","Накл");','  Рез = РегПлан.Выполнить(','    Отбор);'], col:'rgba(200,140,40,0.5)'},
+          {x:4700, y:360, lines:['SOAP WSDL Endpoint:','https://1c.corp/ws/main','──────────────────────','Status: 200 OK','Latency: 87ms'], col:'rgba(245,158,11,0.5)'},
+          {x:5450, y:345, lines:['{"КодОперации":"ПРИХ",','  "Склад":"ЦС-01",','  "Позиций": 47,','  "Сумма": 829100.00,','  "Статус": "ПРОВЕДЕН"}'], col:'rgba(253,211,100,0.5)'},
+          {x:6050, y:360, lines:['ИТОГО синхронизаций:','  Сегодня:   ████ 3 842','  В месяц:  ████ 98 203','  Ошибок:   0.02%','  ✓ SYNC OK'], col:'rgba(245,158,11,0.6)'},
+        ];
+        for(let f of FRAGMENTS){
+          let lh=16, pad=10, fw=230, fh=f.lines.length*lh+pad*2;
+          ctx.fillStyle='rgba(26,16,3,0.88)'; ctx.fillRect(f.x,f.y,fw,fh);
+          ctx.strokeStyle=f.col; ctx.lineWidth=1; ctx.strokeRect(f.x,f.y,fw,fh);
+          // Header bar
+          ctx.fillStyle=f.col.replace('0.5','0.2').replace('0.55','0.2').replace('0.6','0.2');
+          ctx.fillRect(f.x,f.y,fw,12);
+          ctx.fillStyle=f.col; ctx.font='10px monospace';
+          for(let li=0;li<f.lines.length;li++) ctx.fillText(f.lines[li], f.x+pad, f.y+12+pad+li*lh);
+        }
+
+        // === DATABASE CYLINDERS ===
+        const DBS = [
+          {x:760,  y:430, label:'MSSQL',  col:'#d97706'},
+          {x:1560, y:420, label:'1С СУБД', col:'#f59e0b'},
+          {x:2380, y:435, label:'Oracle',  col:'#92400e'},
+          {x:3180, y:420, label:'Postgre', col:'#d97706'},
+          {x:3980, y:430, label:'1С СУБД', col:'#f59e0b'},
+          {x:4780, y:425, label:'MongoDB', col:'#92400e'},
+          {x:5580, y:420, label:'Redis',   col:'#d97706'},
+          {x:6350, y:430, label:'1С СУБД', col:'#f59e0b'},
+        ];
+        for(let db of DBS){
+          let cw=80, ch=60, er=16;
+          // Cylinder body
+          ctx.fillStyle=db.col+'18'; ctx.fillRect(db.x,db.y+er,cw,ch);
+          ctx.strokeStyle=db.col+'70'; ctx.lineWidth=1; ctx.strokeRect(db.x,db.y+er,cw,ch);
+          // Bottom ellipse
+          ctx.fillStyle=db.col+'25';
+          ctx.beginPath(); ctx.ellipse(db.x+cw/2,db.y+er+ch,cw/2,er/2,0,0,Math.PI*2); ctx.fill();
+          ctx.strokeStyle=db.col+'70'; ctx.stroke();
+          // Top ellipse
+          ctx.fillStyle=db.col+'35';
+          ctx.beginPath(); ctx.ellipse(db.x+cw/2,db.y+er,cw/2,er/2,0,0,Math.PI*2); ctx.fill();
+          ctx.strokeStyle=db.col+'80'; ctx.stroke();
+          // Label
+          ctx.fillStyle=db.col+'cc'; ctx.font='bold 11px monospace'; ctx.textAlign='center';
+          ctx.fillText(db.label, db.x+cw/2, db.y+er+ch/2+4); ctx.textAlign='left';
+          // Animated fill bar (storage)
+          let fill = 0.4+0.4*Math.sin(T/2000+db.x*0.004);
+          ctx.fillStyle=db.col+'40'; ctx.fillRect(db.x+8,db.y+er+ch-18,cw-16,10);
+          ctx.fillStyle=db.col+'99'; ctx.fillRect(db.x+8,db.y+er+ch-18,(cw-16)*fill,10);
+        }
+
+        // === INTEGRATION BANNER (top bar) ===
+        const INTEGRATIONS=[
+          {label:'1С ↔ SAP',    col:'#f59e0b'},
+          {label:'SOAP/WSDL',   col:'#d97706'},
+          {label:'JSON REST',   col:'#f59e0b'},
+          {label:'XML ComInfo', col:'#92400e'},
+          {label:'ЭДО СБИС',    col:'#d97706'},
+          {label:'ОФД / ФНС',   col:'#f59e0b'},
+          {label:'EDI обмен',   col:'#92400e'},
+          {label:'ESB шина',    col:'#d97706'},
+          {label:'WebHook API', col:'#f59e0b'},
+        ];
+        const BW=200, BREP=Math.ceil(W/(BW*INTEGRATIONS.length))+1;
+        for(let rep=0; rep<BREP; rep++){
+          for(let si=0; si<INTEGRATIONS.length; si++){
+            let s=INTEGRATIONS[si], bx=rep*(BW*INTEGRATIONS.length)+si*BW;
+            ctx.fillStyle=s.col+'18'; ctx.strokeStyle=s.col+'50'; ctx.lineWidth=1;
+            ctx.beginPath(); roundRect(ctx,bx+4,4,BW-8,24,4); ctx.fill(); ctx.stroke();
+            ctx.fillStyle=s.col+'cc'; ctx.font='bold 11px monospace'; ctx.textAlign='center';
+            ctx.fillText(s.label, bx+BW/2, 21); ctx.textAlign='left';
+          }
+        }
+
+        // === GROUND FLOOR ===
+        let gGrad=ctx.createLinearGradient(0,G,0,G+90);
+        gGrad.addColorStop(0,'#2d1a04'); gGrad.addColorStop(1,'#160d01');
+        ctx.fillStyle=gGrad; ctx.fillRect(0,G,W,90);
+        // Floor amber glow line
+        ctx.strokeStyle='rgba(245,158,11,0.3)'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(0,G); ctx.lineTo(W,G); ctx.stroke();
+        // Floor tiles
+        ctx.strokeStyle='rgba(60,35,5,0.55)'; ctx.lineWidth=1;
+        for(let x=0;x<W;x+=120){ ctx.beginPath(); ctx.moveTo(x,G); ctx.lineTo(x,G+90); ctx.stroke(); }
+      }
+
+
+      function drawLevel3BG() {
+        const W=1200, H=675, T=Date.now();
+
+        // === BASE: warm light office floor ===
+        ctx.fillStyle='#dde8ef'; ctx.fillRect(0,0,W,H);
+
+        // === CARPET ZONES (each department quadrant gets a soft carpet) ===
+        const CARPETS=[
+          {x:10,  y:10,  w:570, h:310, col:'#c9dce8'}, // Битрикс24 (top-left)
+          {x:620, y:10,  w:570, h:310, col:'#c5dce3'}, // Веб-разработка (top-right)
+          {x:10,  y:360, w:570, h:305, col:'#ccdde3'}, // Продвижение (bottom-left)
+          {x:620, y:360, w:570, h:305, col:'#c8d9e6'}, // 1С (bottom-right)
+        ];
+        for(let c of CARPETS){
+          ctx.fillStyle=c.col; ctx.fillRect(c.x,c.y,c.w,c.h);
+          // Subtle carpet weave pattern
+          ctx.strokeStyle='rgba(180,200,215,0.35)'; ctx.lineWidth=1;
+          for(let x=c.x;x<c.x+c.w;x+=20){ ctx.beginPath(); ctx.moveTo(x,c.y); ctx.lineTo(x,c.y+c.h); ctx.stroke(); }
+          for(let y=c.y;y<c.y+c.h;y+=20){ ctx.beginPath(); ctx.moveTo(c.x,y); ctx.lineTo(c.x+c.w,y); ctx.stroke(); }
+        }
+
+        // === CORRIDOR / HALLWAY (center cross) ===
+        // Horizontal hall
+        ctx.fillStyle='#e8f0f5'; ctx.fillRect(0,320,W,40);
+        // Vertical hall
+        ctx.fillRect(590,0,40,H);
+        // Hall tile lines
+        ctx.strokeStyle='rgba(195,210,220,0.7)'; ctx.lineWidth=1;
+        for(let x=0;x<W;x+=40){ ctx.beginPath(); ctx.moveTo(x,320); ctx.lineTo(x,360); ctx.stroke(); }
+        for(let y=0;y<H;y+=40){ ctx.beginPath(); ctx.moveTo(590,y); ctx.lineTo(630,y); ctx.stroke(); }
+        // Hall center stripe (yellow safety line)
+        ctx.strokeStyle='rgba(250,200,50,0.4)'; ctx.lineWidth=2; ctx.setLineDash([18,10]);
+        ctx.beginPath(); ctx.moveTo(0,340); ctx.lineTo(590,340); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(630,340); ctx.lineTo(W,340); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(610,0); ctx.lineTo(610,320); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(610,360); ctx.lineTo(610,H); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // === WINDOWS along top & bottom walls (sunlight shafts) ===
+        const WIN_TOP = [{x:80,w:140},{x:300,w:140},{x:520,w:100},{x:680,w:140},{x:900,w:140}];
+        const WIN_BOT = [{x:100,w:120},{x:320,w:140},{x:700,w:130},{x:920,w:130}];
+        for(let win of WIN_TOP){
+          // Window frame
+          ctx.fillStyle='rgba(200,230,250,0.5)'; ctx.fillRect(win.x,0,win.w,14);
+          ctx.strokeStyle='rgba(150,190,220,0.6)'; ctx.lineWidth=2; ctx.strokeRect(win.x,0,win.w,14);
+          // Sunlight shaft
+          let bright=0.08+0.02*Math.sin(T/4000+win.x*0.01);
+          let shGrad=ctx.createLinearGradient(0,0,0,200);
+          shGrad.addColorStop(0,`rgba(255,235,180,${bright})`);
+          shGrad.addColorStop(1,'rgba(255,235,180,0)');
+          ctx.fillStyle=shGrad; ctx.fillRect(win.x-20,0,win.w+40,200);
+        }
+        for(let win of WIN_BOT){
+          ctx.fillStyle='rgba(200,230,250,0.5)'; ctx.fillRect(win.x,H-14,win.w,14);
+          ctx.strokeStyle='rgba(150,190,220,0.6)'; ctx.lineWidth=2; ctx.strokeRect(win.x,H-14,win.w,14);
+          let bright=0.07+0.02*Math.sin(T/4500+win.x*0.01);
+          let shGrad=ctx.createLinearGradient(0,H,0,H-200);
+          shGrad.addColorStop(0,`rgba(255,235,180,${bright})`);
+          shGrad.addColorStop(1,'rgba(255,235,180,0)');
+          ctx.fillStyle=shGrad; ctx.fillRect(win.x-20,H-200,win.w+40,200);
+        }
+
+        // === CEILING LIGHTS (office fluorescent panels, top-down shadow) ===
+        const LIGHTS=[
+          {x:100,y:80},{x:300,y:80},{x:100,y:200},{x:300,y:200},
+          {x:700,y:80},{x:900,y:80},{x:700,y:200},{x:900,y:200},
+          {x:100,y:440},{x:300,y:440},{x:100,y:560},{x:300,y:560},
+          {x:700,y:440},{x:900,y:440},{x:700,y:560},{x:900,y:560},
+        ];
+        for(let l of LIGHTS){
+          let glow=ctx.createRadialGradient(l.x,l.y,0,l.x,l.y,90);
+          glow.addColorStop(0,'rgba(240,250,255,0.18)');
+          glow.addColorStop(1,'rgba(240,250,255,0)');
+          ctx.fillStyle=glow; ctx.fillRect(l.x-90,l.y-90,180,180);
+          // Panel rect
+          ctx.fillStyle='rgba(235,248,255,0.7)'; ctx.fillRect(l.x-28,l.y-8,56,16);
+          ctx.strokeStyle='rgba(180,210,230,0.6)'; ctx.lineWidth=1; ctx.strokeRect(l.x-28,l.y-8,56,16);
+        }
+
+        // === PLANTS / DECOR (top-down circles in corners) ===
+        const PLANTS=[{x:40,y:40},{x:1155,y:40},{x:40,y:630},{x:1155,y:630}];
+        for(let p of PLANTS){
+          ctx.fillStyle='rgba(34,197,94,0.25)'; ctx.beginPath(); ctx.arc(p.x,p.y,22,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='rgba(34,197,94,0.45)'; ctx.beginPath(); ctx.arc(p.x,p.y,14,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='rgba(21,128,61,0.5)'; ctx.beginPath(); ctx.arc(p.x,p.y,7,0,Math.PI*2); ctx.fill();
+          // Pot
+          ctx.fillStyle='rgba(161,100,50,0.5)'; ctx.fillRect(p.x-6,p.y-4,12,8);
+        }
+
+        // === DOOR OPENINGS (visible at map edges) ===
+        const DOORS=[{x:588,y:150,w:44,h:6},{x:588,y:490,w:44,h:6}];
+        for(let d of DOORS){
+          ctx.fillStyle='rgba(210,190,160,0.8)'; ctx.fillRect(d.x,d.y,d.w,d.h);
+          ctx.strokeStyle='rgba(160,130,90,0.6)'; ctx.lineWidth=1.5; ctx.strokeRect(d.x,d.y,d.w,d.h);
+        }
+
+        // === MUTING OVERLAY — приглушаем яркость, сохраняем офисную суть ===
+        ctx.fillStyle='rgba(10,20,35,0.52)'; ctx.fillRect(0,0,W,H);
+      }
+
+      function drawLevel4BG() {
+        const W=1200, H=2700, T=Date.now();
+
+        // === BASE: very dark night office floor ===
+        ctx.fillStyle='#07101a'; ctx.fillRect(0,0,W,H);
+
+        // === DARK TILE GRID (barely visible) ===
+        ctx.strokeStyle='rgba(15,28,45,0.8)'; ctx.lineWidth=1;
+        for(let x=0;x<W;x+=40){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+        for(let y=0;y<H;y+=40){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+        // === MONITOR GLOW POOLS at desk areas (blue-ish ambient light) ===
+        const MON_GLOW=[
+          // Row 1 (y≈2400-2600)
+          {x:150,y:2500},{x:280,y:2500},{x:420,y:2480},{x:560,y:2510},
+          {x:720,y:2490},{x:860,y:2505},{x:990,y:2480},
+          // Row 2
+          {x:120,y:2200},{x:260,y:2210},{x:410,y:2190},{x:580,y:2205},
+          {x:740,y:2195},{x:900,y:2210},{x:1050,y:2190},
+          // Row 3
+          {x:140,y:1950},{x:290,y:1960},{x:440,y:1940},{x:600,y:1955},
+          {x:760,y:1945},{x:920,y:1960},{x:1060,y:1940},
+          // Row 4
+          {x:130,y:1700},{x:270,y:1710},{x:430,y:1690},{x:590,y:1705},
+          {x:750,y:1695},{x:910,y:1710},{x:1070,y:1690},
+          // Row 5
+          {x:150,y:1450},{x:300,y:1460},{x:450,y:1440},{x:620,y:1455},
+          {x:780,y:1445},{x:940,y:1460},{x:1090,y:1440},
+          // Row 6-10 (upper floors)
+          {x:160,y:1200},{x:310,y:1210},{x:470,y:1190},{x:640,y:1205},
+          {x:800,y:1195},{x:960,y:1210},{x:1100,y:1190},
+          {x:140,y:950},{x:290,y:960},{x:450,y:940},{x:620,y:955},
+          {x:780,y:945},{x:940,y:960},{x:1090,y:940},
+          {x:150,y:700},{x:300,y:710},{x:460,y:690},{x:630,y:705},
+          {x:790,y:695},{x:950,y:710},{x:1100,y:690},
+          {x:160,y:450},{x:310,y:460},{x:470,y:440},{x:640,y:455},
+          {x:800,y:445},{x:960,y:460},{x:1100,y:440},
+          {x:150,y:200},{x:300,y:210},{x:460,y:190},{x:630,y:205},
+          {x:790,y:195},{x:950,y:210},{x:1100,y:190},
+        ];
+        for(let m of MON_GLOW){
+          let pulse=0.8+0.2*Math.sin(T/1200+m.x*0.007+m.y*0.003);
+          let mg=ctx.createRadialGradient(m.x,m.y,0,m.x,m.y,55);
+          mg.addColorStop(0,`rgba(59,130,246,${(0.18*pulse).toFixed(3)})`);
+          mg.addColorStop(1,'rgba(59,130,246,0)');
+          ctx.fillStyle=mg; ctx.fillRect(m.x-55,m.y-55,110,110);
+        }
+
+        // === EMERGENCY LED STRIPS along walls ===
+        ctx.strokeStyle='rgba(16,185,129,0.2)'; ctx.lineWidth=3;
+        // Left wall strip
+        ctx.beginPath(); ctx.moveTo(8,0); ctx.lineTo(8,H); ctx.stroke();
+        // Right wall strip
+        ctx.beginPath(); ctx.moveTo(W-8,0); ctx.lineTo(W-8,H); ctx.stroke();
+        // Floor strips every room (horizontal lines every 250px)
+        ctx.strokeStyle='rgba(16,185,129,0.12)'; ctx.lineWidth=2;
+        for(let y=250;y<H;y+=250){
+          ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+        }
+        // Emergency LED dots along left/right wall
+        for(let y=80;y<H;y+=200){
+          let blink=Math.floor(T/800+y*0.01)%3===0?0.9:0.4;
+          ctx.fillStyle=`rgba(16,185,129,${blink.toFixed(1)})`;
+          ctx.beginPath(); ctx.arc(12,y,4,0,Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(W-12,y,4,0,Math.PI*2); ctx.fill();
+        }
+
+        // === WINDOWS (night sky, city lights outside) ===
+        const WIN_ROWS=[200,700,1200,1700,2200,2650];
+        const WIN_POS=[{x:80,w:100},{x:250,w:100},{x:700,w:100},{x:900,w:100}];
+        for(let wy of WIN_ROWS){
+          for(let wp of WIN_POS){
+            // Night window (dark blue with city glow)
+            ctx.fillStyle='rgba(5,15,35,0.9)'; ctx.fillRect(wp.x,wy-7,wp.w,14);
+            // City light gradient (warm orange from below)
+            let cityGlow=ctx.createLinearGradient(0,wy+7,0,wy-7);
+            cityGlow.addColorStop(0,'rgba(255,140,30,0.12)');
+            cityGlow.addColorStop(1,'rgba(20,60,120,0.15)');
+            ctx.fillStyle=cityGlow; ctx.fillRect(wp.x,wy-7,wp.w,14);
+            // Window frame
+            ctx.strokeStyle='rgba(40,70,110,0.6)'; ctx.lineWidth=1.5;
+            ctx.strokeRect(wp.x,wy-7,wp.w,14);
+            // Stars / city lights (tiny dots)
+            ctx.fillStyle='rgba(255,255,200,0.6)';
+            for(let i=0;i<4;i++){
+              let sx=wp.x+10+i*(wp.w/4), sy=wy-3+Math.sin(i*2.1)*3;
+              ctx.beginPath(); ctx.arc(sx,sy,0.8,0,Math.PI*2); ctx.fill();
+            }
+            // Ambient glow inside from window
+            let wg=ctx.createRadialGradient(wp.x+wp.w/2,wy,0,wp.x+wp.w/2,wy,60);
+            wg.addColorStop(0,'rgba(30,80,160,0.06)');
+            wg.addColorStop(1,'rgba(30,80,160,0)');
+            ctx.fillStyle=wg; ctx.fillRect(wp.x-60,wy-60,wp.w+120,120);
+          }
+        }
+
+        // === SECURITY CAMERA RED LIGHTS ===
+        const CAM_POS=[{x:60,y:240},{x:1140,y:490},{x:60,y:740},{x:1140,y:990},
+                       {x:60,y:1240},{x:1140,y:1490},{x:60,y:1740},{x:1140,y:1990},
+                       {x:60,y:2240},{x:1140,y:2490}];
+        for(let cam of CAM_POS){
+          let blink=Math.floor(T/1000+cam.y*0.001)%2;
+          ctx.fillStyle=blink?'rgba(239,68,68,0.9)':'rgba(239,68,68,0.3)';
+          ctx.beginPath(); ctx.arc(cam.x,cam.y,5,0,Math.PI*2); ctx.fill();
+          // Red glow when active
+          if(blink){
+            let rg=ctx.createRadialGradient(cam.x,cam.y,0,cam.x,cam.y,35);
+            rg.addColorStop(0,'rgba(239,68,68,0.15)');
+            rg.addColorStop(1,'rgba(239,68,68,0)');
+            ctx.fillStyle=rg; ctx.fillRect(cam.x-35,cam.y-35,70,70);
+          }
+          // Camera body
+          ctx.fillStyle='rgba(30,40,55,0.8)'; ctx.fillRect(cam.x-10,cam.y-4,20,8);
+          ctx.strokeStyle='rgba(60,80,100,0.6)'; ctx.lineWidth=1; ctx.strokeRect(cam.x-10,cam.y-4,20,8);
+        }
+
+        // === FLOOR ZONES (slightly lighter tint for walkable areas) ===
+        ctx.fillStyle='rgba(15,30,50,0.25)';
+        [[0,2150,1200,2680],[0,1900,1200,2150],[0,1650,1200,1900],[0,1400,1200,1650],
+         [0,1150,1200,1400],[0,900,1200,1150],[0,650,1200,900],[0,400,1200,650],
+         [0,180,1200,400],[0,0,1200,180]].forEach(z=>ctx.fillRect(z[0],z[1],z[2]-z[0],z[3]-z[1]));
+
+        // === SERVER ROOM GLOW (top area — goal) ===
+        let srGrad=ctx.createLinearGradient(0,0,0,200);
+        srGrad.addColorStop(0,'rgba(16,185,129,0.14)');
+        srGrad.addColorStop(1,'rgba(16,185,129,0)');
+        ctx.fillStyle=srGrad; ctx.fillRect(0,0,W,200);
+        // Server room top border
+        ctx.strokeStyle='rgba(16,185,129,0.35)'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(0,180); ctx.lineTo(W,180); ctx.stroke();
+      }
+
+      function drawLevel5BG() {
+        const G = GROUND_Y, W = LEVEL_W[4], T = Date.now();
+        const bossAlive = boss && boss.hp > 0;
+        const bossHpPct = bossAlive ? boss.hp / boss.maxHp : 1;
+        const destroying = bossAlive && bossHpPct < 0.5;
+        const dp = destroying ? Math.min(1, (0.5 - bossHpPct) / 0.5) : 0; // 0→1 as HP 50%→0
+
+        // ================================================================
+        // ZONE 1: STREET (x: 0 → 1200)
+        // ================================================================
+
+        // Stormy dramatic sky
+        let skyGrad = ctx.createLinearGradient(0, 0, 0, G);
+        skyGrad.addColorStop(0, '#0c0d14');
+        skyGrad.addColorStop(0.55, '#1a1c2e');
+        skyGrad.addColorStop(1, '#2a1c0e');
+        ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, 1200, G);
+
+        // Storm clouds (layered dark shapes)
+        const CLOUDS = [
+          {x:30, y:40, rx:200, ry:55}, {x:250, y:25, rx:180, ry:45},
+          {x:500, y:55, rx:220, ry:60}, {x:750, y:30, rx:190, ry:50},
+          {x:980, y:45, rx:210, ry:55},
+        ];
+        for(let cl of CLOUDS) {
+          let drift = Math.sin(T/8000 + cl.x*0.005)*12;
+          ctx.fillStyle = 'rgba(18,16,30,0.75)';
+          ctx.beginPath(); ctx.ellipse(cl.x+drift, cl.y, cl.rx, cl.ry, 0, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = 'rgba(28,24,50,0.5)';
+          ctx.beginPath(); ctx.ellipse(cl.x+drift+40, cl.y-15, cl.rx*0.7, cl.ry*0.7, 0, 0, Math.PI*2); ctx.fill();
+        }
+
+        // Background city silhouette
+        const BLDGS = [
+          {x:-20, w:80, h:280}, {x:55, w:60, h:220}, {x:100, w:90, h:320},
+          {x:180, w:70, h:260}, {x:240, w:100, h:350}, {x:330, w:60, h:240},
+          {x:380, w:110, h:380}, {x:480, w:75, h:270}, {x:545, w:90, h:310},
+          {x:620, w:65, h:230}, {x:670, w:120, h:400}, {x:780, w:80, h:290},
+          {x:850, w:100, h:340}, {x:940, w:70, h:260}, {x:1000, w:90, h:310},
+          {x:1080, w:110, h:370},
+        ];
+        for(let b of BLDGS) {
+          let by = G - b.h;
+          ctx.fillStyle = '#0e0f1a';
+          ctx.fillRect(b.x, by, b.w, b.h);
+          // Windows (lit at night)
+          for(let wy=by+10; wy<G-20; wy+=22) {
+            for(let wx=b.x+6; wx<b.x+b.w-6; wx+=16) {
+              let lit = Math.sin(wx*7.3+wy*3.1) > 0.2;
+              if(lit) { ctx.fillStyle='rgba(255,220,100,0.3)'; ctx.fillRect(wx, wy, 8, 12); }
+            }
+          }
+          // Roof detail
+          ctx.fillStyle = '#14151f'; ctx.fillRect(b.x-3, by-6, b.w+6, 8);
+        }
+
+        // Street asphalt
+        let roadGrad = ctx.createLinearGradient(0, G-30, 0, G);
+        roadGrad.addColorStop(0,'#1c1c24'); roadGrad.addColorStop(1,'#141418');
+        ctx.fillStyle = roadGrad; ctx.fillRect(0, G-20, 1200, 20+90);
+        // Lane markings
+        ctx.strokeStyle='rgba(255,220,50,0.25)'; ctx.lineWidth=3; ctx.setLineDash([40,25]);
+        ctx.beginPath(); ctx.moveTo(0,G+20); ctx.lineTo(1200,G+20); ctx.stroke();
+        ctx.setLineDash([]);
+        // Road edge lines
+        ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(0,G-2); ctx.lineTo(1200,G-2); ctx.stroke();
+
+        // Streetlights
+        const LIGHTS = [80, 280, 480, 680, 880, 1080];
+        for(let lx of LIGHTS) {
+          // Pole
+          ctx.fillStyle='#2a2a35'; ctx.fillRect(lx-3, G-200, 6, 200);
+          // Arm
+          ctx.fillStyle='#2a2a35'; ctx.fillRect(lx-3, G-200, 45, 5);
+          // Lamp glow
+          let flick = 0.85+0.15*Math.sin(T/600+lx*0.1);
+          ctx.fillStyle=`rgba(255,220,120,${(0.9*flick).toFixed(2)})`;
+          ctx.fillRect(lx+28, G-203, 22, 10);
+          // Light cone
+          let lcGrad = ctx.createRadialGradient(lx+39,G-198,0, lx+39,G-120,140);
+          lcGrad.addColorStop(0,`rgba(255,230,150,${(0.07*flick).toFixed(3)})`);
+          lcGrad.addColorStop(1,'rgba(255,230,150,0)');
+          ctx.fillStyle = lcGrad; ctx.fillRect(lx-60,G-198,200,200);
+        }
+
+        // Parked cars (silhouettes)
+        const CARS=[{x:150,y:G-30,w:90,h:30},{x:380,y:G-30,w:100,h:30},{x:700,y:G-30,w:85,h:28}];
+        for(let car of CARS){
+          ctx.fillStyle='#1a1a28'; ctx.fillRect(car.x,car.y,car.w,car.h);
+          ctx.fillStyle='#22223a'; ctx.fillRect(car.x+12,car.y-14,car.w-24,16);
+          // Red taillights
+          ctx.fillStyle='rgba(239,68,68,0.6)'; ctx.fillRect(car.x,car.y+8,8,6);
+          // Headlights
+          ctx.fillStyle='rgba(253,230,150,0.5)'; ctx.fillRect(car.x+car.w-8,car.y+8,8,6);
+        }
+
+        // Office building facade transition (visible at x≈950-1200 on right side)
+        ctx.fillStyle='#1a1220'; ctx.fillRect(950, 80, 260, G-80);
+        // Building windows grid
+        for(let bwy=100; bwy<G-40; bwy+=50) {
+          for(let bwx=970; bwx<1190; bwx+=42) {
+            let on = Math.sin(bwx*5.1+bwy*2.7)>0;
+            ctx.fillStyle=on?'rgba(200,220,255,0.25)':'rgba(20,20,35,0.6)';
+            ctx.fillRect(bwx,bwy,28,32);
+          }
+        }
+        // "Первый Бит" company sign on building
+        ctx.fillStyle='rgba(239,68,68,0.7)'; ctx.fillRect(960,160,230,30);
+        ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.font='bold 14px monospace'; ctx.textAlign='center';
+        ctx.fillText('ПЕРВЫЙ БИТ', 1075, 181); ctx.textAlign='left';
+        // Entrance doors at ground level
+        ctx.fillStyle='rgba(100,120,160,0.4)'; ctx.fillRect(1020,G-90,80,90);
+        ctx.fillStyle='rgba(150,180,220,0.3)'; ctx.fillRect(1025,G-88,36,88);
+        ctx.fillRect(1063,G-88,36,88);
+        ctx.strokeStyle='rgba(180,200,240,0.4)'; ctx.lineWidth=1;
+        ctx.strokeRect(1020,G-90,80,90);
+
+        // ================================================================
+        // ZONE 2: OFFICE INTERIOR (x: 1200 → 2400)
+        // ================================================================
+
+        // Floor — polished marble/tile
+        let offGrad = ctx.createLinearGradient(1200, 0, 1200, G);
+        offGrad.addColorStop(0, '#0f0a1a');
+        offGrad.addColorStop(0.5, '#160e22');
+        offGrad.addColorStop(1, '#1e1030');
+        ctx.fillStyle = offGrad; ctx.fillRect(1200, 0, 1200, G);
+
+        // Ceiling panels with fluorescent lights
+        ctx.fillStyle='#100a1e'; ctx.fillRect(1200,0,1200,35);
+        ctx.strokeStyle='rgba(150,100,220,0.2)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(1200,35); ctx.lineTo(2400,35); ctx.stroke();
+        // Fluorescent panels
+        const OFF_LIGHTS=[1300,1520,1740,1960,2180,2350];
+        for(let lx of OFF_LIGHTS){
+          let pulse=0.7+0.3*Math.sin(T/400+lx*0.008);
+          ctx.fillStyle=`rgba(200,160,255,${(0.12*pulse).toFixed(3)})`; ctx.fillRect(lx,5,160,20);
+          ctx.strokeStyle=`rgba(200,160,255,${(0.3*pulse).toFixed(3)})`; ctx.lineWidth=1; ctx.strokeRect(lx,5,160,20);
+          // Light cone downward
+          let lc2=ctx.createLinearGradient(0,35,0,300);
+          lc2.addColorStop(0,`rgba(180,140,255,${(0.06*pulse).toFixed(3)})`);
+          lc2.addColorStop(1,'rgba(180,140,255,0)');
+          ctx.fillStyle=lc2; ctx.fillRect(lx-20,35,200,265);
+        }
+
+        // Corporate wallpaper / wall decoration stripes
+        ctx.fillStyle='rgba(80,40,140,0.12)'; ctx.fillRect(1200,40,1200,50);
+        ctx.fillStyle='rgba(80,40,140,0.06)'; ctx.fillRect(1200,95,1200,15);
+        // Side wall panels (vertical)
+        for(let wx=1220; wx<2400; wx+=180){
+          ctx.fillStyle='rgba(70,35,120,0.15)'; ctx.fillRect(wx,40,8,G-80);
+          ctx.strokeStyle='rgba(120,60,200,0.2)'; ctx.lineWidth=1; ctx.strokeRect(wx,40,8,G-80);
+        }
+
+        // Polished floor tiles
+        ctx.strokeStyle='rgba(60,30,100,0.3)'; ctx.lineWidth=1;
+        for(let fx=1200; fx<2400; fx+=80){ ctx.beginPath(); ctx.moveTo(fx,G-20); ctx.lineTo(fx,G); ctx.stroke(); }
+        ctx.beginPath(); ctx.moveTo(1200,G-10); ctx.lineTo(2400,G-10); ctx.stroke();
+        // Floor reflection glow
+        let floorRef=ctx.createLinearGradient(0,G-20,0,G);
+        floorRef.addColorStop(0,'rgba(120,60,200,0.08)'); floorRef.addColorStop(1,'rgba(120,60,200,0)');
+        ctx.fillStyle=floorRef; ctx.fillRect(1200,G-50,1200,50);
+
+        // Background office furniture silhouettes
+        const FURN=[
+          {x:1250,y:G-120,w:100,h:80,col:'rgba(40,20,80,0.7)'},   // desk
+          {x:1420,y:G-140,w:80,h:100,col:'rgba(35,15,70,0.7)'},    // cabinet
+          {x:1600,y:G-100,w:120,h:60,col:'rgba(40,20,80,0.7)'},    // desk
+          {x:1750,y:G-160,w:60,h:120,col:'rgba(35,15,70,0.7)'},    // server rack
+          {x:1830,y:G-160,w:60,h:120,col:'rgba(35,15,70,0.7)'},    // server rack
+          {x:2050,y:G-120,w:100,h:80,col:'rgba(40,20,80,0.7)'},    // desk
+          {x:2180,y:G-140,w:80,h:100,col:'rgba(35,15,70,0.7)'},    // cabinet
+          {x:2300,y:G-110,w:100,h:70,col:'rgba(40,20,80,0.7)'},    // desk
+        ];
+        for(let f of FURN){
+          ctx.fillStyle=f.col; ctx.fillRect(f.x,f.y,f.w,f.h);
+          ctx.strokeStyle='rgba(100,50,180,0.2)'; ctx.lineWidth=1; ctx.strokeRect(f.x,f.y,f.w,f.h);
+          // Monitor glow on desks
+          if(f.h<90){ let mg=ctx.createRadialGradient(f.x+f.w/2,f.y,0,f.x+f.w/2,f.y,40); mg.addColorStop(0,'rgba(100,150,255,0.12)'); mg.addColorStop(1,'rgba(0,0,0,0)'); ctx.fillStyle=mg; ctx.fillRect(f.x-30,f.y-30,f.w+60,60); }
+        }
+
+        // Company portraits / plaques on wall (top section)
+        const PLAQUES=[{x:1340,label:'Лучший\nменеджер'},{x:1620,label:'KPI\n300%'},{x:1900,label:'Продажи\nx10'},{x:2180,label:'Клиент\nдоволен'}];
+        for(let pl of PLAQUES){
+          ctx.fillStyle='rgba(60,25,110,0.6)'; ctx.fillRect(pl.x,55,90,70);
+          ctx.strokeStyle='rgba(150,80,255,0.3)'; ctx.lineWidth=1; ctx.strokeRect(pl.x,55,90,70);
+          ctx.fillStyle='rgba(200,160,255,0.5)'; ctx.font='9px monospace'; ctx.textAlign='center';
+          let lines=pl.label.split('\n'); lines.forEach((l,i)=>ctx.fillText(l,pl.x+45,75+i*16));
+          ctx.textAlign='left';
+        }
+
+        // ================================================================
+        // ZONE 3: CRUMBLING (overlay on office zone when boss HP < 50%)
+        // ================================================================
+        if(destroying) {
+          // Intensifying red emergency lighting
+          let redPulse = 0.5+0.5*Math.sin(T/300);
+          let redAlpha = (0.08 + 0.14*dp*redPulse);
+          ctx.fillStyle=`rgba(239,68,68,${redAlpha.toFixed(3)})`; ctx.fillRect(1200,0,1200,G);
+
+          // Emergency strip lights (wall mounted, pulsing red)
+          ctx.strokeStyle=`rgba(239,68,68,${(0.4+0.4*redPulse).toFixed(2)})`; ctx.lineWidth=3;
+          ctx.beginPath(); ctx.moveTo(1200,30); ctx.lineTo(2400,30); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(1200,G-8); ctx.lineTo(2400,G-8); ctx.stroke();
+          // Emergency dots
+          for(let ex=1220; ex<2400; ex+=80){
+            ctx.fillStyle=`rgba(239,68,68,${(0.7+0.3*redPulse).toFixed(2)})`;
+            ctx.beginPath(); ctx.arc(ex,25,5,0,Math.PI*2); ctx.fill();
+          }
+
+          // Cracks spreading across walls (pre-seeded by index)
+          const CRACKS=[
+            {x:1250,y:100,len:180,angle:0.7},{x:1350,y:200,len:140,angle:-0.5},
+            {x:1500,y:80,len:200,angle:0.9},{x:1480,y:300,len:160,angle:-0.8},
+            {x:1650,y:150,len:220,angle:0.6},{x:1700,y:350,len:180,angle:-0.7},
+            {x:1850,y:90,len:190,angle:0.8},{x:1900,y:250,len:160,angle:-0.6},
+            {x:2050,y:120,len:200,angle:0.75},{x:2100,y:400,len:150,angle:-0.85},
+            {x:2200,y:80,len:180,angle:0.65},{x:2280,y:300,len:160,angle:-0.75},
+            // Floor cracks
+            {x:1300,y:G-15,len:200,angle:0.1},{x:1600,y:G-10,len:250,angle:-0.12},
+            {x:1900,y:G-12,len:180,angle:0.08},{x:2200,y:G-14,len:220,angle:-0.09},
+          ];
+          ctx.strokeStyle=`rgba(180,180,200,${(0.5*dp).toFixed(2)})`; ctx.lineWidth=1.5;
+          for(let i=0; i<Math.floor(CRACKS.length*dp+1) && i<CRACKS.length; i++){
+            let cr=CRACKS[i];
+            ctx.beginPath(); ctx.moveTo(cr.x,cr.y);
+            // Main crack line
+            ctx.lineTo(cr.x+Math.cos(cr.angle)*cr.len, cr.y+Math.sin(cr.angle)*cr.len);
+            // Branch cracks
+            let bx=cr.x+Math.cos(cr.angle)*cr.len*0.5, by=cr.y+Math.sin(cr.angle)*cr.len*0.5;
+            ctx.moveTo(bx,by);
+            ctx.lineTo(bx+Math.cos(cr.angle+0.8)*cr.len*0.4, by+Math.sin(cr.angle+0.8)*cr.len*0.4);
+            ctx.moveTo(bx,by);
+            ctx.lineTo(bx+Math.cos(cr.angle-0.6)*cr.len*0.3, by+Math.sin(cr.angle-0.6)*cr.len*0.3);
+            ctx.stroke();
+          }
+
+          // Falling ceiling chunks (animated by time + seed)
+          const CHUNKS=[];
+          for(let i=0;i<Math.floor(20*dp);i++){
+            let seed=i*137.508; // golden angle seed
+            let cx=1250+(Math.sin(seed)*600+600)/1*0.95;
+            let fallSpeed=30+Math.sin(seed*2)*20;
+            let cy=((T/1000*fallSpeed + Math.sin(seed)*300) % (G+60)) - 30;
+            CHUNKS.push({x:1200+((seed*53)%1150), y:cy, w:8+Math.sin(seed)*6|0, h:6+Math.sin(seed*1.3)*4|0});
+          }
+          for(let ch of CHUNKS){
+            ctx.fillStyle=`rgba(180,160,200,${(0.6*dp).toFixed(2)})`;
+            ctx.fillRect(ch.x,ch.y,ch.w,ch.h);
+          }
+
+          // Dust clouds (large soft circles drifting)
+          for(let i=0;i<Math.floor(6*dp)+1;i++){
+            let seed=i*89.3;
+            let dx=1250+((seed*73)%1100);
+            let dy=100+((T/800+seed*40)%(G-100));
+            let dr=30+Math.sin(seed)*20;
+            let dustAlpha=0.06*dp*(0.5+0.5*Math.sin(T/700+seed));
+            let dg=ctx.createRadialGradient(dx,dy,0,dx,dy,dr);
+            dg.addColorStop(0,`rgba(200,190,210,${dustAlpha.toFixed(3)})`);
+            dg.addColorStop(1,'rgba(200,190,210,0)');
+            ctx.fillStyle=dg; ctx.fillRect(dx-dr,dy-dr,dr*2,dr*2);
+          }
+
+          // Exposed rebar / broken ceiling at top (grows with dp)
+          let rebarLen=180*dp;
+          ctx.strokeStyle=`rgba(120,100,140,${(0.5*dp).toFixed(2)})`; ctx.lineWidth=2;
+          const REBAR_X=[1280,1450,1620,1820,2000,2180,2330];
+          for(let rx of REBAR_X){
+            ctx.beginPath(); ctx.moveTo(rx,0); ctx.lineTo(rx+Math.sin(rx)*15,rebarLen); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(rx+12,0); ctx.lineTo(rx+12+Math.sin(rx+1)*12,rebarLen*0.8); ctx.stroke();
+          }
+
+          // Screen shake hint (subtle dark flicker at high destruction)
+          if(dp>0.7){
+            let flickAlpha=(dp-0.7)/0.3*0.12*(Math.floor(T/80)%2);
+            ctx.fillStyle=`rgba(0,0,0,${flickAlpha.toFixed(3)})`; ctx.fillRect(1200,0,1200,G);
+          }
+        }
+
+        // Base dramatic red ambient glow around boss position (always present)
+        let bossX = boss ? boss.x+boss.w/2 : 1800;
+        let grd=ctx.createRadialGradient(bossX, 300, 0, bossX, 300, 350);
+        grd.addColorStop(0, `rgba(239,68,68,${destroying?0.15:0.06})`);
+        grd.addColorStop(1, 'transparent');
+        ctx.fillStyle=grd; ctx.fillRect(0,0,W,G);
+      }
+
       function draw() {
         ctx.clearRect(0,0,CANVAS_W,CANVAS_H); ctx.save(); ctx.translate(-cameraX, 0);
         if(currentLevel===3) { drawTopDown(); ctx.restore(); return; }
-        if(currentLevel===4) { drawStealth(); ctx.restore(); return; }
+        if(currentLevel===4) { ctx.translate(0, -cameraY); drawStealth(); ctx.restore(); return; }
+        if(currentLevel===5) { drawLevel5(); ctx.restore(); return; }
         let idx=currentLevel-1;
-        if(currentLevel===1) { ctx.fillStyle='#1e293b'; for(let i=0;i<10;i++) ctx.fillRect(i*600-80, GROUND_Y+60, 120, 360); }
-        else { ctx.fillStyle='#1a1207'; for(let i=0;i<12;i++) ctx.fillRect(i*600-80, GROUND_Y+60, 120, 360); ctx.fillStyle='rgba(245,158,11,0.05)'; for(let i=0;i<6;i++) ctx.fillRect(i*1000,0,500,675); }
+        if(currentLevel===1) { drawLevel1BG(); }
+        else { drawLevel2BG(); }
         for(let p of platforms) {
           if(p.type==='wall') { ctx.fillStyle='#1e293b'; ctx.fillRect(p.x, p.y, p.w, p.h); ctx.strokeStyle='#ef4444'; ctx.lineWidth=3; ctx.strokeRect(p.x, p.y, p.w, p.h); ctx.fillStyle='#fbbf24'; ctx.font='bold 12px monospace'; ctx.textAlign='center'; ctx.fillText(p.label, p.x+p.w/2, p.y+p.h/2+4); ctx.textAlign='left'; }
           else if(p.type==='cabinet') { ctx.fillStyle='#334155'; ctx.fillRect(p.x, p.y, p.w, p.h); ctx.fillStyle='#475569'; ctx.fillRect(p.x, p.y+p.h/2, p.w, 2); ctx.fillRect(p.x+10, p.y+15, p.w-20, 4); ctx.fillRect(p.x+10, p.y+p.h-25, p.w-20, 4); }
           else { ctx.fillStyle=currentLevel===2?'#4a3520':'#334155'; ctx.fillRect(p.x, p.y, p.w, p.h); ctx.fillStyle=currentLevel===2?'#6b4c2a':'#475569'; ctx.fillRect(p.x, p.y, p.w, 4); ctx.fillStyle=currentLevel===2?'#4a3520':'#334155'; }
         }
         decorations.forEach(drawDecoration);
+        if(currentLevel===2) { for(let c2 of level2Coffees) { if(c2.active) { ctx.save(); ctx.font='bold 28px serif'; ctx.textAlign='center'; ctx.fillText('☕',c2.x+13,c2.y+26); ctx.restore(); } } }
         ctx.fillStyle='#10b981'; ctx.fillRect(FINISH_X[idx], 0, 9, CANVAS_H); ctx.fillStyle='#fff'; ctx.font='bold 30px monospace'; ctx.fillText(currentLevel===1?'🚀 ДЕПЛОЙ':'🔄 SYNC OK', FINISH_X[idx]-150, 300);
         for(let b of speechBubbles) { let a=Math.max(0, b.life/b.maxLife); ctx.fillStyle=`rgba(15,23,42,${a*0.8})`; ctx.fillRect(b.x-6, b.y-20, b.text.length*12+12, 26); ctx.fillStyle=`rgba(251,191,36,${a})`; ctx.font='16px monospace'; ctx.fillText(b.text, b.x, b.y); }
         
@@ -999,10 +2375,54 @@
         }
 
         if(player.invuln>0 && Math.floor(Date.now()/80)%2===0) ctx.globalAlpha=0.5;
-        let pm = selectedChar ? ASSETS[selectedChar].model : null;
-        if(pm && pm.complete && pm.naturalWidth>0) ctx.drawImage(pm, player.x, player.y, player.w, player.h);
-        else { ctx.fillStyle=selectedChar==='alina'?'#f472b6':'#60a5fa'; ctx.fillRect(player.x, player.y, player.w, player.h); }
+        let pm;
+        if(selectedChar === 'ekaterina') {
+          const ek = ASSETS.ekaterina;
+          if(!player.onGround && player.vy < 0) {
+            pm = ek.jump || ek.model;
+          } else if(!player.onGround && player.vy > 0) {
+            pm = ek.fall || ek.model;
+          } else if(player.vx !== 0) {
+            pm = (Math.floor(Date.now()/200)%2===0) ? (ek.step1 || ek.model) : (ek.step2 || ek.model);
+          } else {
+            pm = ek.idle || ek.model;
+          }
+        } else if(selectedChar === 'alina') {
+          const al = ASSETS.alina;
+          if(!player.onGround && player.vy < 0) {
+            pm = al.jump || al.model;
+          } else if(!player.onGround && player.vy > 0) {
+            pm = al.fall || al.model;
+          } else if(player.vx !== 0) {
+            pm = (Math.floor(Date.now()/200)%2===0) ? (al.step1 || al.model) : (al.step2 || al.model);
+          } else {
+            pm = al.idle || al.model;
+          }
+        } else {
+          pm = selectedChar ? ASSETS[selectedChar].model : null;
+        }
+        if(pm && pm.complete && pm.naturalWidth>0) {
+          if(!player.facingRight) {
+            ctx.save(); ctx.translate(player.x + player.w, 0); ctx.scale(-1, 1);
+            ctx.drawImage(pm, 0, player.y, player.w, player.h); ctx.restore();
+          } else {
+            ctx.drawImage(pm, player.x, player.y, player.w, player.h);
+          }
+        } else { ctx.fillStyle=selectedChar==='alina'?'#f472b6':'#60a5fa'; ctx.fillRect(player.x, player.y, player.w, player.h); }
         ctx.fillStyle='#fff'; ctx.fillRect(player.x+(player.facingRight?player.w:-18), player.y+18, 18, 8); ctx.globalAlpha=1;
+        // Heat bar (all levels)
+        if(heatLevel > 0 || heatOverheat) {
+          let hbX=player.x-4, hbY=player.y+player.h+4, hbW=player.w+8, hbH=6;
+          ctx.globalAlpha=1;
+          ctx.fillStyle='#1e293b'; ctx.fillRect(hbX-1, hbY-1, hbW+2, hbH+2);
+          let heatCol = heatLevel>80?'#ef4444':heatLevel>50?'#f97316':'#fbbf24';
+          if(heatOverheat) heatCol = Math.floor(Date.now()/100)%2?'#ef4444':'#ff6b6b';
+          ctx.fillStyle=heatCol; ctx.fillRect(hbX, hbY, hbW*(heatLevel/100), hbH);
+          if(heatOverheat) {
+            ctx.fillStyle='rgba(239,68,68,0.9)'; ctx.font='bold 11px monospace'; ctx.textAlign='center';
+            ctx.fillText('🔥 ПЕРЕГРЕВ!', player.x+player.w/2, hbY-4); ctx.textAlign='left';
+          }
+        }
         let em=ASSETS.enemy, ej=ASSETS.jumper;
         for(let e of enemies) {
           if(e.dead) continue;
@@ -1019,9 +2439,7 @@
       }
 
       function drawTopDown() {
-        ctx.fillStyle='#1e293b'; ctx.fillRect(0,0,1200,675); ctx.strokeStyle='#334155'; ctx.lineWidth=1;
-        for(let x=0;x<1200;x+=40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,675); ctx.stroke(); }
-        for(let y=0;y<675;y+=40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(1200,y); ctx.stroke(); }
+        drawLevel3BG();
         ctx.fillStyle='#475569'; for(let p of platforms) { if(p.type==='wall') ctx.fillRect(p.x, p.y, p.w, p.h); }
         l3_decorations.forEach(drawDecoration);
         
@@ -1077,40 +2495,460 @@
       }
 
       function drawStealth() {
-        ctx.fillStyle='#111827'; ctx.fillRect(0,0,CANVAS_W,CANVAS_H);
-        ctx.strokeStyle='#1f2937'; ctx.lineWidth=1;
-        for(let x=0;x<CANVAS_W;x+=40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,CANVAS_H); ctx.stroke(); }
-        for(let y=0;y<CANVAS_H;y+=40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(CANVAS_W,y); ctx.stroke(); }
-        
-        ctx.fillStyle='#334155';
-        for(let w of stealthWalls) ctx.fillRect(w.x, w.y, w.w, w.h);
-        
-        for(let g of stealthGuards) {
-          ctx.fillStyle='rgba(239, 68, 68, 0.15)';
-          ctx.beginPath();
-          ctx.moveTo(g.x + g.w/2, g.y + g.h/2);
-          ctx.arc(g.x + g.w/2, g.y + g.h/2, g.visionRange, g.angle - g.visionAngle/2, g.angle + g.visionAngle/2);
-          ctx.closePath(); ctx.fill();
-        }
-        
+        const LEVEL_H4 = 2700;
+        drawLevel4BG();
+
+        // Decorations (coolers and plants)
+        stealthDecorations.forEach(d => drawDecoration(d));
+
+        // Server room highlight
+        ctx.fillStyle='rgba(16,185,129,0.12)';
+        ctx.fillRect(0, 0, 1200, 180);
         ctx.fillStyle='#10b981'; ctx.fillRect(stealthGoal.x, stealthGoal.y, stealthGoal.w, stealthGoal.h);
-        ctx.fillStyle='#fff'; ctx.font='10px monospace'; ctx.textAlign='center';
-        ctx.fillText('СЕРВЕРНАЯ', stealthGoal.x + stealthGoal.w/2, stealthGoal.y + stealthGoal.h/2 + 4);
-        
-        for(let g of stealthGuards) {
-          ctx.fillStyle='#ef4444';
-          ctx.fillRect(g.x, g.y, g.w, g.h);
-          ctx.fillStyle='#fff';
-          let cx = g.x + g.w/2, cy = g.y + g.h/2;
-          ctx.fillRect(cx + Math.cos(g.angle)*10 - 3, cy + Math.sin(g.angle)*10 - 3, 6, 6);
+        ctx.fillStyle='rgba(16,185,129,0.5)'; ctx.strokeStyle='#34d399'; ctx.lineWidth=2;
+        ctx.strokeRect(stealthGoal.x, stealthGoal.y, stealthGoal.w, stealthGoal.h);
+        ctx.fillStyle='#fff'; ctx.font='bold 13px monospace'; ctx.textAlign='center';
+        ctx.fillText('🖥️ СЕРВЕРНАЯ', stealthGoal.x+stealthGoal.w/2, stealthGoal.y+stealthGoal.h/2-6);
+        ctx.fillStyle='#34d399'; ctx.font='11px monospace';
+        ctx.fillText('DEPLOY HERE', stealthGoal.x+stealthGoal.w/2, stealthGoal.y+stealthGoal.h/2+10);
+        ctx.textAlign='left';
+
+        // Walls
+        for(let w of stealthWalls) {
+          ctx.fillStyle='#334155'; ctx.fillRect(w.x, w.y, w.w, w.h);
+          ctx.fillStyle='#475569'; ctx.fillRect(w.x, w.y, w.w, Math.min(3, w.h));
         }
-        
+
+        // Guard vision cones
+        for(let g of stealthGuards) {
+          ctx.fillStyle='rgba(239,68,68,0.13)';
+          ctx.beginPath(); ctx.moveTo(g.x+g.w/2, g.y+g.h/2);
+          ctx.arc(g.x+g.w/2, g.y+g.h/2, g.visionRange, g.angle-g.visionAngle/2, g.angle+g.visionAngle/2);
+          ctx.closePath(); ctx.fill();
+          ctx.strokeStyle='rgba(239,68,68,0.25)'; ctx.lineWidth=1; ctx.stroke();
+        }
+
+        // Guards
+        for(let g of stealthGuards) {
+          let sprite = g.type==='rotate' ? ASSETS.manager_td : ASSETS.security_td;
+          if(sprite && sprite.complete && sprite.naturalWidth > 0) {
+            ctx.save();
+            ctx.translate(g.x+g.w/2, g.y+g.h/2);
+            // Flip based on facing direction
+            let facing = Math.cos(g.angle) > 0 ? 1 : -1;
+            ctx.scale(facing, 1);
+            let ow=g.w*1.55, oh=g.h*1.55; ctx.drawImage(sprite, -ow/2, -oh/2, ow, oh);
+            ctx.restore();
+          } else {
+            ctx.fillStyle=g.type==='rotate'?'#f59e0b':'#ef4444'; ctx.fillRect(g.x, g.y, g.w, g.h);
+            ctx.fillStyle='#fff'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
+            ctx.fillText(g.type==='rotate'?'MGR':'SEC', g.x+g.w/2, g.y+g.h/2+3); ctx.textAlign='left';
+          }
+          // Direction dot
+          ctx.fillStyle='rgba(239,68,68,0.8)';
+          ctx.beginPath(); ctx.arc(g.x+g.w/2+Math.cos(g.angle)*14, g.y+g.h/2+Math.sin(g.angle)*14, 4, 0, Math.PI*2); ctx.fill();
+        }
+
+        // Player
         let td = selectedChar==='alina'?ASSETS.alina_td:ASSETS.ekaterina_td;
         if(td && td.complete && td.naturalWidth>0) ctx.drawImage(td, player.x, player.y, player.w, player.h);
         else { ctx.fillStyle=selectedChar==='alina'?'#f472b6':'#60a5fa'; ctx.fillRect(player.x, player.y, player.w, player.h); }
-        ctx.fillStyle='#fff'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
+        ctx.fillStyle='#fff'; ctx.font='bold 9px monospace'; ctx.textAlign='center';
         ctx.fillText('РП', player.x+player.w/2, player.y+player.h/2+3); ctx.textAlign='left';
+        // Heat bar — fixed HUD position (top-right, always in view regardless of cameraX)
+        {
+          let hx=cameraX+1070, hy=42, hw=120, hh=10;
+          ctx.fillStyle='rgba(10,15,25,0.85)'; ctx.fillRect(hx-2, hy-14, hw+4, hh+18);
+          ctx.fillStyle='rgba(40,50,70,0.9)'; ctx.fillRect(hx, hy, hw, hh);
+          let heatCol = heatLevel>80?'#ef4444':heatLevel>50?'#f97316':'#fbbf24';
+          if(heatOverheat) heatCol = Math.floor(Date.now()/100)%2?'#ef4444':'#ff6b6b';
+          ctx.fillStyle=heatCol; ctx.fillRect(hx, hy, hw*(heatLevel/100), hh);
+          ctx.strokeStyle='rgba(100,120,150,0.5)'; ctx.lineWidth=1; ctx.strokeRect(hx, hy, hw, hh);
+          ctx.fillStyle='rgba(200,220,255,0.75)'; ctx.font='bold 9px monospace';
+          ctx.fillText('🔥 НАГРЕВ', hx, hy-3);
+          if(heatOverheat) {
+            ctx.fillStyle='rgba(239,68,68,0.95)'; ctx.font='bold 11px monospace'; ctx.textAlign='center';
+            ctx.fillText('ПЕРЕГРЕВ!', hx+hw/2, hy+hh+12); ctx.textAlign='left';
+          }
+        }
       }
+
+      function updateLevel5() {
+        const G = GROUND_Y;
+        // --- PLAYER MOVEMENT (platformer) ---
+        if(keys['ArrowLeft'] || keys['KeyA']) player.vx = -5; 
+        else if(keys['ArrowRight'] || keys['KeyD']) player.vx = 5; 
+        else player.vx = 0;
+        player.facingRight = player.vx !== 0 ? player.vx > 0 : player.facingRight;
+        if((keys['Space'] || keys['ArrowUp'] || keys['KeyW']) && player.onGround) { player.vy = player.jump; player.onGround = false; }
+        player.vy += 0.55; player.x += player.vx; player.y += player.vy;
+        player.x = Math.max(0, Math.min(LEVEL_W[4] - player.w, player.x));
+        player.onGround = false;
+        for(let p of platforms) { if(player.x+player.w>p.x&&player.x<p.x+p.w&&player.y+player.h>=p.y&&player.y+player.h<=p.y+22&&player.vy>=0){ player.y=p.y-player.h; player.vy=0; player.onGround=true; } }
+        cameraX = Math.max(0, Math.min(player.x - 350, LEVEL_W[4] - CANVAS_W));
+
+        // --- SHIELD (Shift key) ---
+        if(shieldCD > 0) shieldCD--;
+        if((keys['ShiftLeft']||keys['ShiftRight']) && !shieldActive && shieldCD === 0) { shieldActive = true; shieldTimer = 120; playShootSound(); }
+        if(shieldActive) { shieldTimer--; if(shieldTimer <= 0) { shieldActive = false; shieldCD = 300; } }
+
+        // --- SHOOTING + OVERHEAT ---
+        if(player.shootCD > 0) player.shootCD--;
+        // Heat cooldown: decrease over time, release overheat when drained
+        if(heatOverheat) {
+          heatLevel = Math.max(0, heatLevel - 1.0);
+          if(heatLevel <= 0) heatOverheat = false;
+        } else if(heatLevel > 0) {
+          heatLevel = Math.max(0, heatLevel - 0.4);
+        }
+        const isFiring = keys['Mouse'] || keys['KeyZ'];
+        if(isFiring && player.shootCD <= 0 && !heatOverheat) { 
+          playShootSound(); let d=player.facingRight?1:-1; 
+          bullets.push({x:player.x+(d>0?player.w:0), y:player.y+22, vx:14*d, life:120}); player.shootCD=18; 
+          heatLevel = Math.min(100, heatLevel + 16);
+          if(heatLevel >= 100) heatOverheat = true;
+        }
+
+        // --- BOSS AI ---
+        if(boss && boss.hp > 0) {
+          let bossPhase = boss.hp > 200 ? 1 : boss.hp > 100 ? 2 : 3;
+          if(bossPhase !== boss.phase) { boss.phase = bossPhase; boss.flashTimer = 60; createParticles(boss.x+boss.w/2, boss.y, '#f59e0b', 25); }
+          
+          boss.vy += 0.8; boss.onGround = false;
+          for(let p of platforms) { if(boss.x+boss.w>p.x&&boss.x<p.x+p.w&&boss.y+boss.h>=p.y&&boss.y+boss.h<=p.y+22&&boss.vy>=0){ boss.y=p.y-boss.h; boss.vy=0; boss.onGround=true; } }
+          
+          // Boss horizontal movement
+          let spd = 1.2 + (3 - bossPhase) * 0.0 + (bossPhase - 1) * 0.6;
+          boss.x += boss.vx * spd;
+          if(boss.x < boss.minX) { boss.x = boss.minX; boss.vx = Math.abs(boss.vx); }
+          if(boss.x > boss.maxX) { boss.x = boss.maxX; boss.vx = -Math.abs(boss.vx); }
+          if(boss.flashTimer > 0) boss.flashTimer--;
+          boss.angryFace = Math.floor(Date.now()/300) % 3;
+
+          // Boss attacks
+          boss.attackTimer++;
+          let cd = boss.phase === 3 ? 100 : boss.phase === 2 ? 140 : 180;
+          if(boss.attackTimer >= cd) {
+            boss.attackTimer = 0;
+            let attacks = ['wave', 'tripleShot'];
+            if(bossPhase >= 2) attacks.push('bomb', 'bomb');
+            if(bossPhase >= 3) attacks.push('charge', 'wave');
+            let atk = attacks[Math.floor(Math.random() * attacks.length)];
+            
+            if(atk === 'wave') {
+              bossProjectiles.push({ type:'wave', x:boss.x, y:G-165, w:80, h:165, vx:-7-bossPhase*0.5, life:200 });
+              speechBubbles.push({x:boss.x-100,y:boss.y-30,text:'ВЫ ОТВЕТИТЕ ЗА ЭТО!!!',life:80,maxLife:80});
+            } else if(atk === 'tripleShot') {
+              let offsets = [-0.15, 0, 0.15];
+              offsets.forEach(a => {
+                let spd2 = 7 + bossPhase;
+                bossProjectiles.push({ type:'bullet', x:boss.x+boss.w/2, y:boss.y+boss.h/2, vx:Math.cos(Math.PI+a)*spd2, vy:Math.sin(a)*spd2, life:120, text:'TASK' });
+              });
+              speechBubbles.push({x:boss.x-60,y:boss.y-30,text:'ПРАВКИ! ПРАВКИ! ПРАВКИ!',life:70,maxLife:70});
+            } else if(atk === 'bomb') {
+              let bx = player.x + player.w/2 + (Math.random()*120 - 60);
+              bossProjectiles.push({ type:'bomb', x:bx, y:0, w:30, h:30, vy:5+bossPhase, life:200, exploded:false });
+              speechBubbles.push({x:boss.x-50,y:boss.y-30,text:'МНЕ НУЖНА КОМПЕНСАЦИЯ!!!',life:70,maxLife:70});
+            } else if(atk === 'charge') {
+              boss.vx = player.x < boss.x ? -8 : 8;
+              boss.minX = 50; boss.maxX = 2300;
+              setTimeout(()=>{ if(boss){boss.minX=1400;boss.vx=-1.2;} }, 2000);
+              speechBubbles.push({x:boss.x-80,y:boss.y-30,text:'Я ГОВОРИЛ С ВАШИМ ДИРЕКТОРОМ!',life:90,maxLife:90});
+            }
+          }
+        }
+
+        // --- BOSS PROJECTILES ---
+        for(let i=bossProjectiles.length-1; i>=0; i--) {
+          let p = bossProjectiles[i];
+          p.life--;
+          if(p.life <= 0) { bossProjectiles.splice(i,1); continue; }
+          
+          if(p.type === 'wave') {
+            p.x += p.vx;
+            // Player hit: ground level OR lowest platforms (G-165)
+            if(player.invuln <= 0 && !shieldActive && p.x < player.x+player.w && p.x+p.w > player.x && player.y+player.h >= G-165) {
+              takeDamage(20);
+              bossProjectiles.splice(i,1); continue;
+            }
+          } else if(p.type === 'bullet') {
+            p.x += p.vx; p.y += p.vy;
+            if(player.invuln <= 0 && !shieldActive && Math.abs(p.x-(player.x+player.w/2))<28 && Math.abs(p.y-(player.y+player.h/2))<28) {
+              takeDamage(12);
+              bossProjectiles.splice(i,1); continue;
+            }
+            if(p.x < -100 || p.x > 3000 || p.y > G+50) { bossProjectiles.splice(i,1); continue; }
+          } else if(p.type === 'bomb') {
+            if(!p.exploded) {
+              p.y += p.vy;
+              // Bomb lands on ground or platform
+              let landed = false;
+              if(p.y + p.h >= G) { p.y = G - p.h; landed = true; }
+              for(let pl of platforms) {
+                if(pl.y === G) continue;
+                if(p.x+p.w/2 > pl.x && p.x+p.w/2 < pl.x+pl.w && p.y+p.h >= pl.y && p.y+p.h <= pl.y+22) { p.y = pl.y-p.h; landed = true; }
+              }
+              if(landed) {
+                p.exploded = true; p.life = 40;
+                createParticles(p.x+p.w/2, p.y, '#f59e0b', 20);
+                // Damage player if NOT on ground (i.e., in air or on platform != ground)
+                if(player.invuln <= 0 && !shieldActive && Math.abs(p.x+p.w/2-(player.x+player.w/2))<80 && player.y+player.h < G-5) {
+                  takeDamage(18);
+                }
+              }
+            }
+          }
+          // Shield absorbed = visual feedback
+          if(shieldActive && p.type !== 'bomb') {
+            let hit = false;
+            if(p.type==='bullet' && Math.abs(p.x-(player.x+player.w/2))<50 && Math.abs(p.y-(player.y+player.h/2))<50) hit=true;
+            if(p.type==='wave' && p.x < player.x+player.w+30 && p.x+p.w > player.x-30 && player.y+player.h >= G-5) hit=true;
+            if(hit) { createParticles(player.x+player.w/2, player.y+player.h/2, '#38bdf8', 8); bossProjectiles.splice(i,1); continue; }
+          }
+        }
+
+        // --- BULLET HIT BOSS ---
+        for(let i=bullets.length-1; i>=0; i--) {
+          let b=bullets[i]; b.x+=b.vx; b.life--;
+          if(b.life<=0||b.x<cameraX-80||b.x>cameraX+CANVAS_W+80){bullets.splice(i,1);continue;}
+          if(boss && boss.hp>0 && b.x<boss.x+boss.w && b.x+27>boss.x && b.y<boss.y+boss.h && b.y+27>boss.y) {
+            boss.hp -= 10; bullets.splice(i,1); boss.flashTimer=8;
+            createParticles(boss.x+boss.w/2, boss.y+boss.h/2, '#38bdf8', 5);
+            if(boss.hp <= 0) {
+              boss.hp = 0; totalKills = 1;
+              createParticles(boss.x+boss.w/2, boss.y, '#10b981', 30);
+              showLevelComplete(5); return;
+            }
+          }
+        }
+
+        // --- COFFEE PICKUPS ---
+        coffeeTimer5++;
+        if(coffeeTimer5 > 1200 && level5Coffees.length < 3) { 
+          level5Coffees.push({x: Math.random()*1800+100, y:G-30, active:true}); 
+          coffeeTimer5 = 0; 
+        }
+        for(let i=level5Coffees.length-1; i>=0; i--) {
+          let c=level5Coffees[i]; if(!c.active) { level5Coffees.splice(i,1); continue; }
+          if(Math.abs(c.x+15-(player.x+player.w/2))<35 && Math.abs(c.y+15-(player.y+player.h/2))<35) {
+            stress=Math.min(100,stress+25); c.active=false;
+            createParticles(c.x+15, c.y+15, '#f59e0b', 12);
+            speechBubbles.push({x:player.x-20,y:player.y-30,text:'☕ +25 HP!',life:60,maxLife:60});
+          }
+        }
+
+        // --- PLAYER DAMAGE FROM BOSS TOUCH ---
+        if(boss && player.invuln<=0 && !shieldActive && player.x<boss.x+boss.w && player.x+player.w>boss.x && player.y<boss.y+boss.h && player.y+player.h>boss.y) {
+          takeDamage(25);
+        }
+
+        // --- SPEECH BUBBLES / PARTICLES ---
+        for(let i=speechBubbles.length-1;i>=0;i--) { speechBubbles[i].life--; if(speechBubbles[i].life<=0) speechBubbles.splice(i,1); }
+        for(let i=particles.length-1;i>=0;i--) { let p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.3; p.life--; if(p.life<=0) particles.splice(i,1); }
+        if(player.damageFlash>0) player.damageFlash--;
+        if(player.invuln>0) player.invuln--;
+        updateUI();
+      }
+
+      function takeDamage(amount) {
+        stress -= amount; player.invuln = 52; player.damageFlash = 15;
+        createParticles(player.x+player.w/2, player.y+player.h/2, '#ef4444', 9);
+        if(stress <= 0) showEnd('GAME OVER', ['❌ Клиент победил. Стресс превышен.','😤 Клиент требует встречи с директором.','🔄 Попробуйте снова.']);
+      }
+
+      function drawLevel5() {
+        const G = GROUND_Y;
+        drawLevel5BG();
+
+        // Platforms
+        for(let p of platforms) {
+          if(p.y===G) {
+            ctx.fillStyle='#1e293b'; ctx.fillRect(p.x,p.y,p.w,p.h);
+            ctx.fillStyle='#334155'; ctx.fillRect(p.x,p.y,p.w,6);
+          } else {
+            ctx.fillStyle='#334155'; ctx.fillRect(p.x,p.y,p.w,p.h);
+            ctx.fillStyle='#475569'; ctx.fillRect(p.x,p.y,p.w,4);
+            // Support beams
+            ctx.fillStyle='#1e293b'; ctx.fillRect(p.x+20,p.y+p.h,4,G-p.y-p.h);
+            ctx.fillRect(p.x+p.w-24,p.y+p.h,4,G-p.y-p.h);
+          }
+        }
+
+        // Finish line / battle zone marker
+        ctx.fillStyle='rgba(239,68,68,0.1)'; ctx.fillRect(1200,0,1200,675);
+        ctx.strokeStyle='#ef4444'; ctx.lineWidth=3; ctx.setLineDash([10,5]);
+        ctx.beginPath(); ctx.moveTo(1200,0); ctx.lineTo(1200,675); ctx.stroke();
+        ctx.setLineDash([]);
+        // Blinking BOSS sign
+        let bossSignAlpha = 0.6 + 0.4 * Math.sin(Date.now() / 250);
+        ctx.save();
+        ctx.globalAlpha = bossSignAlpha;
+        // Red background panel
+        ctx.fillStyle='#7f1d1d'; ctx.fillRect(1060, 280, 280, 110);
+        ctx.strokeStyle='#ef4444'; ctx.lineWidth=3; ctx.strokeRect(1060, 280, 280, 110);
+        // Warning stripes
+        ctx.fillStyle='#fbbf24';
+        for(let i=0;i<8;i++){ ctx.fillRect(1060+i*35, 280, 17, 8); ctx.fillRect(1060+i*35, 382, 17, 8); }
+        // BOSS text
+        ctx.fillStyle='#ef4444';
+        ctx.font='bold 52px monospace';
+        ctx.textAlign='center';
+        ctx.fillText('BOSS', 1200, 350);
+        ctx.font='bold 18px monospace';
+        ctx.fillStyle='#fca5a5';
+        ctx.fillText('⚠️ ОПАСНАЯ ЗОНА ⚠️', 1200, 375);
+        ctx.textAlign='left';
+        ctx.restore();
+
+        // Coffee pickups
+        for(let c of level5Coffees) {
+          if(!c.active) continue;
+          ctx.fillStyle='#78350f'; ctx.beginPath(); ctx.arc(c.x+15,c.y+15,16,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='#f59e0b'; ctx.font='bold 18px monospace'; ctx.textAlign='center'; ctx.fillText('☕',c.x+15,c.y+20); ctx.textAlign='left';
+        }
+
+        // Boss projectiles
+        for(let p of bossProjectiles) {
+          if(p.type==='wave') {
+            ctx.fillStyle='rgba(239,68,68,0.7)'; ctx.fillRect(p.x,p.y,p.w,p.h);
+            ctx.strokeStyle='#ef4444'; ctx.lineWidth=2; ctx.strokeRect(p.x,p.y,p.w,p.h);
+            ctx.fillStyle='#fca5a5'; ctx.font='bold 14px monospace'; ctx.textAlign='center'; ctx.fillText('💢',p.x+p.w/2,p.y-4); ctx.textAlign='left';
+          } else if(p.type==='bullet') {
+            ctx.shadowColor='#ef4444'; ctx.shadowBlur=8; ctx.fillStyle='#ef4444'; ctx.font='bold 19px monospace'; ctx.fillText('TASK',p.x,p.y);
+          } else if(p.type==='bomb') {
+            if(!p.exploded) { ctx.fillStyle='#f59e0b'; ctx.fillRect(p.x,p.y,p.w,p.h); ctx.font='bold 16px monospace'; ctx.textAlign='center'; ctx.fillText('💣',p.x+p.w/2,p.y+p.h/2+6); ctx.textAlign='left'; }
+            else { ctx.fillStyle=`rgba(251,191,36,${p.life/40})`; ctx.beginPath(); ctx.arc(p.x+p.w/2,p.y+p.h/2,60,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fbbf24'; ctx.font='bold 20px monospace'; ctx.textAlign='center'; ctx.fillText('💥',p.x+p.w/2,p.y+p.h/2+8); ctx.textAlign='left'; }
+          }
+        }
+        ctx.shadowBlur=0;
+
+        // Speech bubbles
+        for(let b of speechBubbles) { let a=Math.max(0,b.life/b.maxLife); ctx.fillStyle=`rgba(127,29,29,${a*0.9})`; ctx.fillRect(b.x-6,b.y-20,b.text.length*10+12,26); ctx.fillStyle=`rgba(252,165,165,${a})`; ctx.font='bold 13px monospace'; ctx.fillText(b.text,b.x,b.y); }
+
+        // Player bullets
+        ctx.shadowColor='#38bdf8'; ctx.shadowBlur=12; ctx.fillStyle='#38bdf8'; ctx.font='bold 24px monospace';
+        for(let b of bullets) ctx.fillText('NO',b.x,b.y); ctx.shadowBlur=0;
+
+        // Particles
+        for(let p of particles) { ctx.fillStyle=p.color; ctx.globalAlpha=p.life/35; ctx.fillRect(p.x,p.y,p.size,p.size); }
+        ctx.globalAlpha=1;
+
+        // Player
+        if(player.invuln>0 && Math.floor(Date.now()/80)%2===0) ctx.globalAlpha=0.5;
+        let pm5;
+        if(selectedChar === 'ekaterina') {
+          const ek = ASSETS.ekaterina;
+          if(!player.onGround && player.vy < 0) {
+            pm5 = ek.jump || ek.model;
+          } else if(!player.onGround && player.vy > 0) {
+            pm5 = ek.fall || ek.model;
+          } else if(player.vx !== 0) {
+            pm5 = (Math.floor(Date.now()/200)%2===0) ? (ek.step1 || ek.model) : (ek.step2 || ek.model);
+          } else {
+            pm5 = ek.idle || ek.model;
+          }
+        } else if(selectedChar === 'alina') {
+          const al = ASSETS.alina;
+          if(!player.onGround && player.vy < 0) {
+            pm5 = al.jump || al.model;
+          } else if(!player.onGround && player.vy > 0) {
+            pm5 = al.fall || al.model;
+          } else if(player.vx !== 0) {
+            pm5 = (Math.floor(Date.now()/200)%2===0) ? (al.step1 || al.model) : (al.step2 || al.model);
+          } else {
+            pm5 = al.idle || al.model;
+          }
+        } else {
+          pm5 = selectedChar ? ASSETS[selectedChar].model : null;
+        }
+        if(pm5&&pm5.complete&&pm5.naturalWidth>0) {
+          if(!player.facingRight) {
+            ctx.save(); ctx.translate(player.x + player.w, 0); ctx.scale(-1, 1);
+            ctx.drawImage(pm5, 0, player.y, player.w, player.h); ctx.restore();
+          } else {
+            ctx.drawImage(pm5, player.x, player.y, player.w, player.h);
+          }
+        } else { ctx.fillStyle=selectedChar==='alina'?'#f472b6':'#60a5fa'; ctx.fillRect(player.x,player.y,player.w,player.h); }
+        ctx.globalAlpha=1;
+
+        // Shield effect
+        if(shieldActive) {
+          let pulse = 0.6+0.4*Math.sin(Date.now()/60);
+          ctx.strokeStyle=`rgba(56,189,248,${pulse})`; ctx.lineWidth=3;
+          ctx.beginPath(); ctx.arc(player.x+player.w/2,player.y+player.h/2,player.w*0.8,0,Math.PI*2); ctx.stroke();
+          ctx.fillStyle=`rgba(56,189,248,0.15)`; ctx.beginPath(); ctx.arc(player.x+player.w/2,player.y+player.h/2,player.w*0.8,0,Math.PI*2); ctx.fill();
+        } else if(shieldCD > 0) {
+          // Shield recharging indicator
+          ctx.strokeStyle='rgba(100,116,139,0.5)'; ctx.lineWidth=2;
+          ctx.beginPath(); ctx.arc(player.x+player.w/2,player.y+player.h/2,player.w*0.8,0,Math.PI*2); ctx.stroke();
+        }
+
+        // Boss
+        if(boss && boss.hp > 0) {
+          let bx=boss.x, by=boss.y, bw=boss.w, bh=boss.h;
+          // Draw boss sprite (flash via filter — only affects non-transparent pixels)
+          let bossSprite = ASSETS.boss_model;
+          if(bossSprite && bossSprite.complete && bossSprite.naturalWidth>0) {
+            ctx.save();
+            const _bFlash = boss.flashTimer>0 && Math.floor(boss.flashTimer/3)%2===0;
+            if(_bFlash) {
+              ctx.filter = 'brightness(8) saturate(0) contrast(2)';
+            } else if(boss.phase===3) { ctx.filter='saturate(2) brightness(0.8) hue-rotate(-10deg)'; }
+            else if(boss.phase===2) { ctx.filter='saturate(1.5)'; }
+            if(boss.vx > 0) {
+              ctx.translate(bx + bw, 0); ctx.scale(-1, 1);
+              ctx.drawImage(bossSprite, 0, by, bw, bh);
+            } else {
+              ctx.drawImage(bossSprite, bx, by, bw, bh);
+            }
+            ctx.restore();
+          } else {
+            let col=boss.phase===3?'#7f1d1d':boss.phase===2?'#991b1b':'#b91c1c';
+            ctx.fillStyle=col; ctx.fillRect(bx,by,bw,bh);
+            ctx.font='bold 24px monospace'; ctx.textAlign='center';
+            ctx.fillText('🤬',bx+bw/2,by+bh/2+8); ctx.textAlign='left';
+          }
+          // Boss name/phase label
+          ctx.fillStyle='#fbbf24'; ctx.font='bold 14px monospace'; ctx.textAlign='center';
+          let phaseLabel = boss.phase===3?'😤😤😤 БЕРСЕРК!':boss.phase===2?'😤😤 РАЗЪЯРЁН':'😤 НЕДОВОЛЕН';
+          ctx.fillText('КЛИЕНТ: '+phaseLabel, bx+bw/2, by-30); ctx.textAlign='left';
+          // Boss HP bar
+          let hpW=220, hpX=bx+bw/2-hpW/2, hpY=by-18;
+          ctx.fillStyle='#450a0a'; ctx.fillRect(hpX,hpY,hpW,14);
+          let hpCol=boss.hp/boss.maxHp>0.5?'#ef4444':boss.hp/boss.maxHp>0.25?'#f97316':'#fbbf24';
+          ctx.fillStyle=hpCol; ctx.fillRect(hpX,hpY,hpW*(boss.hp/boss.maxHp),14);
+          ctx.strokeStyle='#7f1d1d'; ctx.lineWidth=1; ctx.strokeRect(hpX,hpY,hpW,14);
+        }
+
+        // Heat bar below player sprite
+        {
+          let hbX = player.x - 4, hbY = player.y + player.h + 4, hbW = player.w + 8, hbH = 7;
+          ctx.fillStyle='#1e293b'; ctx.fillRect(hbX-1, hbY-1, hbW+2, hbH+2);
+          let heatCol = heatLevel > 80 ? '#ef4444' : heatLevel > 50 ? '#f97316' : '#fbbf24';
+          if(heatOverheat) heatCol = Math.floor(Date.now()/100)%2 ? '#ef4444' : '#ff6b6b';
+          ctx.fillStyle = heatCol;
+          ctx.fillRect(hbX, hbY, hbW * (heatLevel / 100), hbH);
+          if(heatOverheat) {
+            ctx.fillStyle='rgba(239,68,68,0.9)'; ctx.font='bold 11px monospace'; ctx.textAlign='center';
+            ctx.fillText('🔥 ПЕРЕГРЕВ!', player.x + player.w/2, hbY - 4);
+            ctx.textAlign='left';
+          }
+        }
+
+        // Shield cooldown HUD (in world-space corner, adjust for camera)
+        let hudX=cameraX+20, hudY=630;
+        if(shieldActive) {
+          ctx.fillStyle='rgba(56,189,248,0.8)'; ctx.fillRect(hudX,hudY,120,20);
+          ctx.fillStyle='#0f172a'; ctx.font='bold 11px monospace'; ctx.fillText('🛡️ ЩИТ АКТИВЕН',hudX+5,hudY+14);
+        } else if(shieldCD>0) {
+          ctx.fillStyle='rgba(51,65,85,0.8)'; ctx.fillRect(hudX,hudY,(120*(1-shieldCD/300)),20);
+          ctx.fillStyle='#64748b'; ctx.font='bold 11px monospace'; ctx.fillText('🛡️ ПЕРЕЗАРЯДКА',hudX+5,hudY+14);
+        } else {
+          ctx.fillStyle='rgba(16,185,129,0.8)'; ctx.fillRect(hudX,hudY,120,20);
+          ctx.fillStyle='#0f172a'; ctx.font='bold 11px monospace'; ctx.fillText('🛡️ ЩИТ ГОТОВ',hudX+5,hudY+14);
+        }
+      }
+
 
       function showLevelComplete(lvl) {
         gameState='COMPLETE'; 
@@ -1123,25 +2961,28 @@
         if(lvl===1) wt='Сайт-каталог успешно задеплоен.<br><br>🛏️ <b>РП может спокойно поспать.</b>';
         else if(lvl===2) wt='Интеграция прошла стабильно. 1С и склад синхронизированы.<br><br>🛌 <b>РП может спокойно поспать перед финалом.</b>';
         else if(lvl===4) wt='Деплой прошёл успешно! Сделка закрыта, деньги получены.<br><br>🤫 <b>Никто так и не узнал.</b>';
+        else if(lvl===5) wt='Клиент успокоен! Ты справился с разъярённым клиентом.<br><br>🏆 <b>Ты настоящий РП — удержал проект даже после пятничного деплоя!</b><br>🎉 <b>КОНЕЦ ИГРЫ — ПОЗДРАВЛЯЕМ!</b>';
         
         document.getElementById('lc-win-img-container').innerHTML=wh; 
         document.getElementById('lc-text').innerHTML=wt;
         
         // ЛОГИКА ПЕРЕХОДА:
         if(lvl === 3) {
-            // Если пройден 3 уровень, показываем промежуточный экран
             screenLevelComplete.style.display = 'none';
+            // Win image
+            let wa3=selectedChar?ASSETS[selectedChar].win:null;
+            document.getElementById('lvl3-win-img-container').innerHTML=(wa3&&wa3.complete&&wa3.naturalWidth>0)?'<img class="lc-win-img" src="assets/'+selectedChar+'_win.png" alt="Победа">':'';
+            // Funny win text
+            document.getElementById('lvl3-win-text').innerHTML='Все программисты задеплоили код вовремя.<br>Ни один сотрудник не уснул на рабочем месте.<br>Кофе-машина выжила.<br><br>🕵️ <b>Никто не заметил, что ты подменила баги фичами.</b><br>📊 <b>KPI закрыт. До следующего квартала.</b>';
             intermediateScreen.style.display = 'flex';
-        } else if(lvl < 4) { 
-            // Для уровней 1 и 2 стандартный переход
+        } else if(lvl < 5) { 
             nextLevelBtn.style.display='block'; 
             nextLevelBtn.textContent='📋 Брифинг по следующему уровню'; 
             nextLevelBtn.onclick=()=>showBriefing(lvl+1); 
             screenLevelComplete.style.display='flex';
         } else {
-            // Финальный экран после 4 уровня (если будет) или просто конец
-            nextLevelBtn.style.display='none';
-            screenLevelComplete.style.display='flex';
+            // Show special funny finale for level 5
+            setTimeout(showFinale, 400);
         }
         
         canvas.style.display='none'; 
@@ -1164,11 +3005,352 @@
       }
 
       window.retryLevel = function() { isPaused=false; pauseScreen.style.display='none'; overlay.style.display='none'; document.getElementById('hud').style.display='flex'; gameHint.style.display='block'; canvas.style.display='block'; setupLevel(currentLevel); resetState(); gameState='PLAYING'; lastTime=0; requestAnimationFrame(loop); };
-      window.debugStart = function(lvl) { selectedChar='alina'; debugMenu.style.display='none'; showScreen(null); canvas.style.display='block'; document.getElementById('hud').style.display='flex'; gameHint.style.display='block'; currentLevel=lvl; document.getElementById('hud-level').textContent=lvl; gameHint.textContent=lvl===3?'WASD : движение | ЛКМ или Z : выстрел "NO"':'← → : ускорить/тормозить | ПРОБЕЛ : прыжок | ЛКМ или Z : выстрел "NO"'; setupLevel(lvl); resetState(); gameState='PLAYING'; lastTime=0; requestAnimationFrame(loop); };
+      window.debugStart = function(lvl) { selectedChar='alina'; debugMenu.style.display='none'; showScreen(null); canvas.style.display='block'; document.getElementById('hud').style.display='flex'; gameHint.style.display='block'; currentLevel=lvl; document.getElementById('hud-level').textContent=lvl; gameHint.textContent=lvl===3?'WASD : движение | ЛКМ или Z : выстрел "NO"':lvl===5?'← → : движение | ПРОБЕЛ/W/↑ : прыжок | SHIFT : щит | ЛКМ или Z : выстрел "NO" | Кофе = здоровье':'← → : ускорить/тормозить | ПРОБЕЛ : прыжок | ЛКМ или Z : выстрел "NO"'; setupLevel(lvl); resetState(); gameState='PLAYING'; lastTime=0; requestAnimationFrame(loop); };
       
       loadSettings();
       preloadAudio();
+
+      // ---------------------------------------------------------------
+      // LOADING SCREEN
+      // ---------------------------------------------------------------
+      (function() {
+        const ls = document.getElementById('loading-screen');
+        const fill = document.getElementById('loading-bar-fill');
+        const pct = document.getElementById('loading-pct');
+        const runnerCanvas = document.getElementById('loading-runner-canvas');
+        const rctx = runnerCanvas.getContext('2d');
+        const barWrapper = document.getElementById('loading-bar-wrapper');
+
+        const ASSET_LIST = [
+          'assets/title_screen.png',
+          'assets/alina_photo.png', 'assets/ekaterina_photo.png',
+          'assets/alina_model.png', 'assets/ekaterina_model.png',
+          'assets/alina_model_step1.png', 'assets/alina_model_step2.png', 'assets/alina_model_idle.png',
+          'assets/alina_model_jump.png', 'assets/alina_model_fall.png',
+          'assets/ekaterina_model_step1.png', 'assets/ekaterina_model_step2.png', 'assets/ekaterina_model_idle.png',
+          'assets/alina_win.png', 'assets/ekaterina_win.png',
+          'assets/alina_td.png', 'assets/ekaterina_td.png',
+          'assets/enemy.png', 'assets/jumper.png',
+          'assets/ksenia_photo.png', 'assets/anton_photo.png',
+          'assets/alexey_photo.png',
+          'assets/programmer_td.png', 'assets/enemy_td.png',
+          'assets/photo_2026-04-15_18-56-39.jpg',
+          'assets/ilya_photo.png',
+          'assets/boss_model.png',
+          'assets/manager_td.png',
+          'assets/security_td.png'
+        ];
+
+        let loaded = 0;
+        const total = ASSET_LIST.length;
+        let runnerImg = null;
+        let runnerImg2 = null;
+        let runnerFrame = 0;
+        let animId = null;
+
+        // Load runner sprites (step1 and step2 walk frames)
+        const ri = new Image();
+        ri.onload = () => { runnerImg = ri; };
+        ri.src = 'assets/ekaterina_model_step1.png';
+        const ri2 = new Image();
+        ri2.onload = () => { runnerImg2 = ri2; };
+        ri2.src = 'assets/ekaterina_model_step2.png';
+        let runnerIdleImg = null;
+        const ri3 = new Image();
+        ri3.onload = () => { runnerIdleImg = ri3; };
+        ri3.src = 'assets/ekaterina_model_idle.png';
+
+        function updateProgress() {
+          loaded++;
+          const p = loaded / total;
+          const pPct = Math.round(p * 100);
+          fill.style.width = pPct + '%';
+          pct.textContent = pPct + '%';
+          const barW = barWrapper.offsetWidth;
+          const runnerX = Math.max(0, Math.min(barW - 48, Math.round(p * barW) - 24));
+          document.getElementById('loading-runner').style.left = runnerX + 'px';
+          if(loaded >= total) finish();
+        }
+
+        function drawRunner() {
+          rctx.clearRect(0, 0, 48, 48);
+          let activeRunnerImg;
+          if(loaded >= total && runnerIdleImg && runnerIdleImg.complete && runnerIdleImg.naturalWidth > 0) {
+            activeRunnerImg = runnerIdleImg;
+          } else {
+            const walkFrame = Math.floor(runnerFrame / 8) % 2;
+            activeRunnerImg = (walkFrame === 0 || !runnerImg2 || !runnerImg2.complete || runnerImg2.naturalWidth === 0) ? runnerImg : runnerImg2;
+          }
+          if(activeRunnerImg && activeRunnerImg.complete && activeRunnerImg.naturalWidth > 0) {
+            rctx.drawImage(activeRunnerImg, 0, 0, 48, 48);
+          } else {
+            rctx.fillStyle = '#60a5fa';
+            rctx.fillRect(8, 4, 32, 40);
+            rctx.fillStyle = '#fbbf24';
+            rctx.beginPath(); rctx.arc(24, 14, 10, 0, Math.PI*2); rctx.fill();
+            // Animated legs
+            const legOff = Math.sin(runnerFrame * 0.3) * 8;
+            rctx.fillStyle = '#3b82f6';
+            rctx.fillRect(12, 36, 8, 10 + legOff);
+            rctx.fillRect(28, 36, 8, 10 - legOff);
+          }
+          runnerFrame++;
+        }
+
+        function animateLoader() {
+          drawRunner();
+          animId = requestAnimationFrame(animateLoader);
+        }
+        animateLoader();
+
+        // Start loading all assets
+        ASSET_LIST.forEach(src => {
+          const img = new Image();
+          img.onload = updateProgress;
+          img.onerror = updateProgress;
+          img.src = src;
+        });
+
+        function finish() {
+          if(animId) cancelAnimationFrame(animId);
+          drawRunner(); // show idle frame as final state
+          window.__assetsReady = true;
+          ls.style.transition = 'opacity 0.5s';
+          ls.style.opacity = '0';
+          setTimeout(() => { ls.style.display = 'none'; }, 500);
+        }
+
+        // Safety timeout: hide after 30s only as absolute fallback
+        setTimeout(finish, 30000);
+      })();
+
     });
-  </script>
+  
+      // ===== FINALE =====
+      function finaleNext(slide) {
+        document.querySelectorAll('.finale-slide').forEach(s => s.classList.remove('active'));
+        const el = document.getElementById('finale-s'+slide);
+        if(el) { el.classList.add('active'); }
+        // Launch confetti on slide 1
+        if(slide===1) spawnConfetti();
+      }
+      function spawnConfetti() {
+        const wrap = document.getElementById('confetti-wrap');
+        wrap.innerHTML = '';
+        const COLORS = ['#10b981','#38bdf8','#fbbf24','#a855f7','#ef4444','#f97316'];
+        for(let i=0;i<80;i++){
+          const p = document.createElement('div');
+          p.className = 'confetti-piece';
+          p.style.left = Math.random()*100+'vw';
+          p.style.top = '-20px';
+          p.style.background = COLORS[Math.floor(Math.random()*COLORS.length)];
+          p.style.width = (6+Math.random()*10)+'px';
+          p.style.height = (6+Math.random()*10)+'px';
+          p.style.animationDuration = (2+Math.random()*3)+'s';
+          p.style.animationDelay = (Math.random()*1.5)+'s';
+          wrap.appendChild(p);
+        }
+      }
+      function showFinale() {
+        // Hide all other screens
+        document.getElementById('screen-level-complete').style.display='none';
+        document.getElementById('game').style.display='none';
+        document.getElementById('hud').style.display='none';
+        document.getElementById('game-hint').style.display='none';
+        // Show finale
+        const fs = document.getElementById('finale-screen');
+        fs.classList.add('active');
+        // Reset to slide 1
+        document.querySelectorAll('.finale-slide').forEach(s => s.classList.remove('active'));
+        document.getElementById('finale-s1').classList.add('active');
+        spawnConfetti();
+      }
+
+
+// ═══════════════════════════════════════════════════════════════════
+// MOBILE CONTROLS
+document.addEventListener('DOMContentLoaded', function() {
+
+  // ── Access game variables exposed from the game closure ───────────
+  function K()   { return window.__gkeys || {}; }
+  function LVL() { return window.__glvl ? window.__glvl() : 1; }
+
+  const mc      = document.getElementById('mobile-controls');
+  const mRing   = document.getElementById('m-stick-ring');
+  const mThumb  = document.getElementById('m-stick-thumb');
+  const mArrows = document.getElementById('m-stick-arrows');
+  const mJump   = document.getElementById('m-btn-jump');
+  const mShoot  = document.getElementById('m-btn-shoot');
+  const mShield = document.getElementById('m-btn-shield');
+  const gameCanvas = document.getElementById('game-canvas');
+
+  if(!mc || !mRing || !mJump || !mShoot || !mShield) return;
+
+  function hasTouchScreen() {
+    return navigator.maxTouchPoints > 0 ||
+           window.matchMedia('(pointer: coarse)').matches;
+  }
+  const mobileActive = hasTouchScreen();
+  if(mobileActive) mc.classList.add('visible');
+
+  // ── Position controls over canvas ──────────────────────────────────
+  function positionMobileControls() {
+    if(!mobileActive || !gameCanvas) return;
+    const r = gameCanvas.getBoundingClientRect();
+    if(r.width < 10) return;
+    const pad = 10;
+    const stickZone = document.getElementById('m-stick-zone');
+    if(stickZone) {
+      stickZone.style.left   = (r.left + pad) + 'px';
+      stickZone.style.bottom = (window.innerHeight - r.bottom + pad) + 'px';
+      stickZone.style.top    = 'auto';
+      stickZone.style.right  = 'auto';
+    }
+    const btnZone = document.getElementById('m-btn-zone');
+    if(btnZone) {
+      btnZone.style.right  = (window.innerWidth - r.right + pad) + 'px';
+      btnZone.style.bottom = (window.innerHeight - r.bottom + pad) + 'px';
+      btnZone.style.top    = 'auto';
+      btnZone.style.left   = 'auto';
+    }
+  }
+  window.addEventListener('resize', positionMobileControls);
+  window.addEventListener('orientationchange', positionMobileControls);
+
+  // ── Update buttons visibility per level ────────────────────────────
+  function updateMobileUI() {
+    if(!mobileActive) return;
+    const lvl = LVL();
+    mJump.style.display   = (lvl === 3) ? 'none' : 'flex';
+    mShield.style.display = (lvl === 5) ? 'flex'  : 'none';
+    if(mArrows) mArrows.innerHTML = (lvl === 3)
+      ? '&#9650;<br>&#9664; &#9654;<br>&#9660;'
+      : '&#9664;&nbsp;&#9654;';
+    positionMobileControls();
+  }
+  window.updateMobileUI = updateMobileUI;
+
+  // ── Joystick ────────────────────────────────────────────────────────
+  const MAX_R = 46;
+  const DEAD  = 18;
+  let stickTouchId = null;
+  let stickOriginX = 0, stickOriginY = 0;
+
+  function stickClearKeys() {
+    const k = K();
+    k['ArrowLeft']  = k['KeyA']  = false;
+    k['ArrowRight'] = k['KeyD']  = false;
+    k['ArrowUp']    = k['KeyW']  = false;
+    k['ArrowDown']  = k['KeyS']  = false;
+  }
+  function stickReset() {
+    stickTouchId = null;
+    stickClearKeys();
+    mThumb.style.transform = 'translate(-50%, -50%)';
+  }
+
+  mRing.addEventListener('touchstart', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if(stickTouchId !== null) return;
+    const t = e.changedTouches[0];
+    stickTouchId = t.identifier;
+    const r = mRing.getBoundingClientRect();
+    stickOriginX = r.left + r.width  / 2;
+    stickOriginY = r.top  + r.height / 2;
+  }, {passive: false});
+
+  document.addEventListener('touchmove', e => {
+    if(stickTouchId === null) return;
+    for(let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      if(t.identifier !== stickTouchId) continue;
+      const dx = t.clientX - stickOriginX;
+      const dy = t.clientY - stickOriginY;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const clamp = Math.min(dist, MAX_R);
+      const ang   = Math.atan2(dy, dx);
+      mThumb.style.transform =
+        'translate(calc(-50% + ' + (Math.cos(ang)*clamp) + 'px), calc(-50% + ' + (Math.sin(ang)*clamp) + 'px))';
+      const k = K();
+      stickClearKeys();
+      if(Math.abs(dx) > DEAD) {
+        if(dx < 0) { k['ArrowLeft']  = true; k['KeyA'] = true; }
+        else        { k['ArrowRight'] = true; k['KeyD'] = true; }
+      }
+      if(Math.abs(dy) > DEAD) {
+        if(dy < 0) { k['ArrowUp']   = true; k['KeyW'] = true; }
+        else        { k['ArrowDown'] = true; k['KeyS'] = true; }
+      }
+    }
+  }, {passive: true});
+
+  const endStick = e => {
+    for(let i = 0; i < e.changedTouches.length; i++) {
+      if(e.changedTouches[i].identifier === stickTouchId) { stickReset(); break; }
+    }
+  };
+  document.addEventListener('touchend',    endStick, {passive: true});
+  document.addEventListener('touchcancel', endStick, {passive: true});
+
+  // ── Action buttons ──────────────────────────────────────────────────
+  function bindBtn(el, ks) {
+    if(!el) return;
+    el.addEventListener('touchstart', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      el.classList.add('pressed');
+      const k = K();
+      ks.forEach(key => { k[key] = true; });
+    }, {passive: false});
+    const release = e => {
+      e.preventDefault();
+      el.classList.remove('pressed');
+      const k = K();
+      ks.forEach(key => { k[key] = false; });
+    };
+    el.addEventListener('touchend',    release, {passive: false});
+    el.addEventListener('touchcancel', release, {passive: false});
+  }
+
+  bindBtn(mJump,   ['Space', 'ArrowUp', 'KeyW']);
+  bindBtn(mShoot,  ['Mouse', 'KeyZ']);
+  bindBtn(mShield, ['ShiftLeft', 'ShiftRight']);
+
+  // ── Watcher: reposition + update UI when level changes ─────────────
+  let _lastLevel = -1;
+  function mobileUIWatcher() {
+    if(mobileActive) {
+      const lvl = LVL();
+      if(lvl !== _lastLevel) { _lastLevel = lvl; updateMobileUI(); }
+      else { positionMobileControls(); }
+    }
+    requestAnimationFrame(mobileUIWatcher);
+  }
+  requestAnimationFrame(mobileUIWatcher);
+});
+</script>
+
+<!-- ===== MOBILE CONTROLS ===== -->
+<div id="mobile-controls">
+  <!-- Joystick left -->
+  <div id="m-stick-zone">
+    <div id="m-stick-ring">
+      <div id="m-stick-thumb"></div>
+      <div id="m-stick-arrows">▲<br>◀ ▶<br>▼</div>
+    </div>
+  </div>
+  <!-- Buttons right -->
+  <div id="m-btn-zone">
+    <div class="m-btn-row">
+      <div id="m-btn-shield" class="m-btn" style="display:none;">🛡<br>ЩИТ</div>
+      <div id="m-btn-jump" class="m-btn">⬆<br>ПРЫЖОК</div>
+    </div>
+    <div class="m-btn-row">
+      <div id="m-btn-shoot" class="m-btn">💬</div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
